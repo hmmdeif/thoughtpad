@@ -1,0 +1,23 @@
+{
+  "name": "thoughtpad",
+  "version": "0.0.1",
+  "description": "Hosted static site generated blog",
+  "engines": {
+    "node": "0.11",
+    "npm": "1.4"
+  },
+  "dependencies": {
+    "koa": "~0.8.1",
+    "koa-router": "~3.2.3",
+    "koa-file-server": "~2.2.2",
+    "koa-logger": "~1.2.2",
+    "thunkify": "~2.1.2",
+    "coffee-script": "~1.7.1",
+    "co": "~3.1.0",
+    "co-fs": "~1.2.0",
+    "uglify-js": "~2.4.15",
+    "uglifycss": "~0.0.9",
+    "stylus": "~0.47.3",
+    "nib": "~1.0.3"
+  }
+}
