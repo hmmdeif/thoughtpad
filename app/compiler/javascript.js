@@ -2,6 +2,7 @@ var coffee = require('coffee-script'),
     fs = require('co-fs'),
     co = require('co'),
     uglify = require('uglify-js'),
+    logger = require('./../logger'),
     _hostname,
     _preout,
     config;
@@ -20,16 +21,6 @@ removeNonBundledFiles = function *(compiledFiles) {
     }
 },
 
-removeBundledFiles = function *() {
-    var files = yield fs.readdir(_preout),
-        i = 0,
-        len = files.length;
-
-    for (i; i < len; i++) {
-        yield fs.unlink(_preout + files[i]);
-    }
-},
-
 compileScript = function *(filepath, newFileName) {
     var parts = filepath.split("."),
         ext = parts[parts.length - 1],
@@ -44,43 +35,49 @@ compileScript = function *(filepath, newFileName) {
     case "js":
     default:
         contents = yield fs.readFile(filepath, 'utf8');
-        yield fs.writeFile(newFileName, contents)
+        yield fs.writeFile(newFileName, contents);
         break;
     }
     return;
 };
 
-compile = function (hostname, cache) {
+compile = function *(hostname, cache) {
     var compiledFiles = [],
         result,
         bundles = getBundles(hostname),
+        totalBundles = Object.keys(bundles).length,
         i,
+        count = 0,
         len,
         files,
+        exists,
         bundle;
 
     _hostname = hostname + "\\documents\\scripts\\";
     _preout = hostname + "\\pre_out\\scripts\\";
 
-    co(function *() {
-        yield removeBundledFiles();
+    yield fs.mkdir(_preout);
+    logger.compiler("\n  Bundling javascript files: 0/" + totalBundles);
 
-        for (bundle in bundles) {
-            files = bundles[bundle];
-            i = 0;
-            len = files.length;
-            compiledFiles = [];
+    for (bundle in bundles) {
+        files = bundles[bundle];
+        i = 0;
+        len = files.length;
+        compiledFiles = [];
+        count++;
+        logger.clearCompiler("  Bundling javascript files: " + count + "/" + totalBundles);
 
-            for (i; i < len; i++) {
-                compiledFiles.push(_preout + i.toString() + '.js');
-                yield compileScript(_hostname + files[i], compiledFiles[i]);
-            }
-
-            result = uglify.minify(compiledFiles);
-            yield fs.writeFile(_preout + "bundled_" + bundle + ".js", result.code);
-            yield removeNonBundledFiles(compiledFiles);
+        for (i; i < len; i++) {
+            compiledFiles.push(_preout + i.toString() + '.js');
+            yield compileScript(_hostname + files[i], compiledFiles[i]);
         }
-    })();
+
+        result = uglify.minify(compiledFiles);
+        yield fs.writeFile(_preout + "bundled_" + bundle + ".js", result.code);
+        yield removeNonBundledFiles(compiledFiles);
+
+    }
+    logger.info(" Done!");
 }
 
 module.exports = {
