@@ -73,7 +73,7 @@ compile = function *(hostname, cache) {
         }
 
         result = uglify.minify(compiledFiles);
-        yield fs.writeFile(_preout + "bundled_" + bundle + ".js", result.code);
+        yield fs.writeFile(_preout + bundle + ".js", result.code);
         yield removeNonBundledFiles(compiledFiles);
 
     }

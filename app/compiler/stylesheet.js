@@ -74,7 +74,7 @@ compile = function *(hostname, cache) {
         }
 
         result = uglify.processFiles(compiledFiles);
-        yield fs.writeFile(_preout + "bundled_" + bundle + ".css", result);
+        yield fs.writeFile(_preout + bundle + ".css", result);
         yield removeNonBundledFiles(compiledFiles);
     }
     logger.info(" Done!");
