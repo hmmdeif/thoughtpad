@@ -8,7 +8,7 @@ startDevServer = function () {
     nodemon({
         script: './app/app.js',
         ext: 'js',
-        watch: ['app/', 'app.js'],
+        watch: ['app/*', 'app.js'],
         execMap: {
             js: "node --harmony"
         },

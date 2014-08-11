@@ -10,17 +10,41 @@ var getConfig = function (hostname) {
     return require(hostname + "\\config.js");
 },
 
-compileLayout = function *(page, newFileName, layoutData, config) {
+compileLayout = function *(page, newFileName, layoutData, config, folderLocations) {
     var parts = layoutData[page.layout].url.split("."),
         ext = parts[parts.length - 1],
         layoutContents = layoutData[page.layout].contents,
+        levelsForBundles,
+        levelString = "",
+        i = 0,
+        len,
         contents;
 
+    levelsForBundles = newFileName.replace(folderLocations.preout, "").split("\\").length;
+    for (i; i < levelsForBundles; i++) {
+        levelString += "../"
+    }
+
+    // If we're not bundling then we want to pass the array of files rather than the bundle name
     if (!appConfig[appConfig.mode].bundleJs) {
         page.scriptBundle = config.scriptCollections[page.scriptBundle];
+        i = 0;
+        len = page.scriptBundle.length;
+        for (i; i < len; i++) {
+            page.scriptBundle[i] = levelString + "scripts/" + page.scriptBundle[i];
+        }
+    } else {
+        page.scriptBundle = levelString + "scripts/" + page.scriptBundle;
     }
     if (!appConfig[appConfig.mode].bundleCss) {
         page.cssBundle = config.cssCollections[page.cssBundle];
+        i = 0;
+        len = page.cssBundle.length;
+        for (i; i < len; i++) {
+            page.cssBundle[i] = levelString + "styles/" + page.cssBundle[i];
+        }
+    } else {
+         page.cssBundle = levelString + "styles/" + page.cssBundle;
     }
 
     switch (ext) {
@@ -36,9 +60,14 @@ compileLayout = function *(page, newFileName, layoutData, config) {
     if (layoutData[page.layout].dependsOn) {
         page.layout = layoutData[page.layout].dependsOn;
         page.content = contents;
-        yield compileLayout(page, newFileName, layoutData, config);
+        yield compileLayout(page, newFileName, layoutData, config, folderLocations);
     } else {
         yield fs.writeFile(newFileName, minifier(contents, { collapseWhitespace: true }));
+
+        // The index is a special case page that sits in the topmost directory
+        if (page.index) {
+            yield fs.writeFile(folderLocations.preout + "index.html", minifier(contents, { collapseWhitespace: true }));
+        }
     }
 
 },
@@ -93,7 +122,7 @@ compilePage = function *(page, folder, layoutData, folderLocations, config) {
 
     if (page.layout) {
         page.content = contents;
-        yield compileLayout(page, newFileName, layoutData, config);
+        yield compileLayout(page, newFileName, layoutData, config, folderLocations);
     } else {
         yield fs.writeFile(newFileName, contents);
     }
