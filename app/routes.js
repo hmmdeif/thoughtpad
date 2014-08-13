@@ -46,7 +46,7 @@ routeToHostedApp = function *(ctx) {
             end = '';
             break;
         }
-        return yield ctx.fileServer.send(__dirname + '\\..\\out\\' + ctx.hostname + ctx.path + end);
+        return yield ctx.fileServer.send(ctx.hostname + ctx.path + end);
     }
     return false;
 };

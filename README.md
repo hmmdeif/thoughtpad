@@ -31,10 +31,26 @@ The popular blog site [medium.com](http://medium.com) is entirely dynamically ge
 
 Note that you need the minimum node engine (>=0.11.9) that allows generators.
 
+## Test
+
+`npm -g install mocha`
+
+This will install the test suite framework globally so you can run mocha in the command line. Then run the following command in the test folder:
+
+`mocha --harmony-generators test`
+
 ## Directory Structure
 
 * app - application specific functions like request handling, compilation and bundling
-* src - the source files for sites before static content generation. The top level folders in this directory should be the domain name of the hosted site
+* src - the source files for sites before static content generation. The top level folders in this directory should be the domain name of the hosted site. Inside each hosted domain will be the following folders:
+    * documents -
+        * posts - for your html/coffeekup/... files
+        * scripts - for your javascript/coffeescript/... files
+        * styles - for your css/styl/... files
+    * files - static files that will be copied to the directory route on compilation (favicon.ico goes here for instance)
+    * layouts - for your layout containers that your content gets injected into
+    * partials - for reuseable dynamic content
+    * config.js - an object that contains all metadata for the content
 * out - the compiled sites split by their domain name
 * admin - a shared area for all domains to manage content
 

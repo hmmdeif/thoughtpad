@@ -25,5 +25,9 @@
     "nib": "~1.0.3",
     "cli-color": "~0.3.2",
     "nodemon": "~1.2.1"
+  },
+  "devDependencies": {
+    "should": "~3.3.2",
+    "mocha": "~1.21.4"
   }
 }

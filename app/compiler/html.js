@@ -10,15 +10,15 @@ var getConfig = function (hostname) {
     return require(hostname + "\\config.js");
 },
 
-compileLayout = function *(page, newFileName, layoutData, config, folderLocations) {
-    var parts = layoutData[page.layout].url.split("."),
-        ext = parts[parts.length - 1],
-        layoutContents = layoutData[page.layout].contents,
-        levelsForBundles,
+rewriteBundles = function (page, folderLocations, newFileName, config) {
+    var levelsForBundles,
         levelString = "",
+        p,
         i = 0,
         len,
-        contents;
+        parts = page.url.split("."),
+        ext = parts[parts.length - 1],
+        cleanPageUrl = page.url.replace(".html." + ext, "/");
 
     levelsForBundles = newFileName.replace(folderLocations.preout, "").split("\\").length;
     for (i; i < levelsForBundles; i++) {
@@ -46,6 +46,22 @@ compileLayout = function *(page, newFileName, layoutData, config, folderLocation
     } else {
          page.cssBundle = levelString + "styles/" + page.cssBundle;
     }
+
+    page.url = levelString + cleanPageUrl;
+    if (page.pages) {
+        for (p in page.pages) {
+            page.pages[p].url = page.url + p;
+        }
+    }
+},
+
+compileLayout = function *(page, newFileName, layoutData, config, folderLocations) {
+    var parts = layoutData[page.layout].url.split("."),
+        ext = parts[parts.length - 1],
+        layoutContents = layoutData[page.layout].contents,
+        contents;
+
+    rewriteBundles(page, folderLocations, newFileName, config);
 
     switch (ext) {
     case "coffee":

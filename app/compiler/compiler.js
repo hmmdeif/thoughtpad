@@ -3,8 +3,7 @@ var js = require('./javascript'),
     logger = require('./../logger'),
     html = require('./html'),
     fs = require('co-fs'),
-    fsp = require('co-fs-plus'),
-    co = require('co');
+    fsp = require('co-fs-plus');
 
 var getHostnames = function *() {
     return yield fs.readdir(__dirname + "\\..\\..\\src\\");
@@ -98,33 +97,36 @@ removeDirectory = function *(folder) {
 };
 
 module.exports = {
-    compile: function (cache) {
-        co(function *() {
-            var hostnames = yield getHostnames(),
-                currentHostname = '',
-                outDirectory,
-                preoutDirectory,
-                staticFileDirectory,
-                i = 0,
-                len = hostnames.length;
+    compile: function *(cache, hostname) {
+        var hostnames = [hostname],
+            currentHostname = '',
+            outDirectory,
+            preoutDirectory,
+            staticFileDirectory,
+            i = 0,
+            len = 1;
 
-            logger.compiler('\nStarting site compilation...');
-            for (i; i < len; i++) {
-                logger.compiler('\nCompiling ' + hostnames[i] + ":");
-                currentHostname = __dirname + "\\..\\..\\src\\" + hostnames[i];
-                outDirectory = __dirname + "\\..\\..\\out\\" + hostnames[i];
-                preoutDirectory = currentHostname + "\\pre_out\\";
-                staticFileDirectory = currentHostname + "\\files\\";
-                yield cleanPreout(currentHostname + "\\pre_out\\");
+        if (!hostnames[0]) {
+            hostnames = yield getHostnames();
+            len = hostnames.length
+        }
 
-                yield js.compile(currentHostname, cache);
-                yield css.compile(currentHostname, cache);
-                yield html.compile(currentHostname, cache);
+        logger.compiler('\nStarting site compilation...');
+        for (i; i < len; i++) {
+            logger.compiler('\nCompiling ' + hostnames[i] + ":");
+            currentHostname = __dirname + "\\..\\..\\src\\" + hostnames[i];
+            outDirectory = __dirname + "\\..\\..\\out\\" + hostnames[i];
+            preoutDirectory = currentHostname + "\\pre_out\\";
+            staticFileDirectory = currentHostname + "\\files\\";
+            yield cleanPreout(currentHostname + "\\pre_out\\");
 
-                logger.compiler('\n  Copying new files to live directory');
-                yield copyToLive(outDirectory, preoutDirectory, staticFileDirectory, cache);
-                logger.info(" Done!");
-            }
-        })();
+            yield js.compile(currentHostname, cache);
+            yield css.compile(currentHostname, cache);
+            yield html.compile(currentHostname, cache);
+
+            logger.compiler('\n  Copying new files to live directory');
+            yield copyToLive(outDirectory, preoutDirectory, staticFileDirectory, cache);
+            logger.info(" Done!");
+        }
     }
 }
