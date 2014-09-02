@@ -7,7 +7,7 @@ var coffee = require('coffeekup'),
     appConfig = require('./../config');
 
 var getConfig = function (hostname) {
-    return require(hostname + "\\config.js");
+    return require(hostname + "/config.js");
 },
 
 rewriteBundles = function (page, folderLocations, newFileName, config) {
@@ -20,7 +20,7 @@ rewriteBundles = function (page, folderLocations, newFileName, config) {
         ext = parts[parts.length - 1],
         cleanPageUrl = page.url.replace(".html." + ext, "/");
 
-    levelsForBundles = newFileName.replace(folderLocations.preout, "").split("\\").length;
+    levelsForBundles = newFileName.replace(folderLocations.preout, "").split("/").length;
     for (i; i < levelsForBundles; i++) {
         levelString += "../"
     }
@@ -112,7 +112,7 @@ compilePage = function *(page, folder, layoutData, folderLocations, config) {
     var parts = page.url.split("."),
         ext = parts[parts.length - 1],
         filepath = folderLocations.postFolder + page.url,
-        folderName = folderLocations.preout + folder + page.url.replace(".html." + ext, "\\"),
+        folderName = folderLocations.preout + folder + page.url.replace(".html." + ext, "/"),
         newFileName = folderName + "index.html",
         exists = yield fs.exists(folderName),
         contents;
@@ -161,7 +161,7 @@ compilePages = function *(pages, folder, layoutData, count, totalPageSets, folde
             }
 
             // Compile the very bottom of the stack first so that when we go up we can dynamically add the content in
-            pages[page].pages = yield compilePages(pages[page].pages, folder + "\\" + page + "\\", layoutData, count, totalPageSets, folderLocations, config);
+            pages[page].pages = yield compilePages(pages[page].pages, folder + "/" + page + "/", layoutData, count, totalPageSets, folderLocations, config);
 
             // Now compile the current level as there will likely be a dependency
             pages[page].content = yield compilePage(pages[page], folder, layoutData, folderLocations, config);
@@ -190,10 +190,10 @@ compile = function *(hostname, cache) {
         bundle,
         layoutData,
         folderLocations = {
-            layoutFolder: hostname + "\\layouts\\",
-            postFolder: hostname + "\\documents\\posts\\",
-            hostname: hostname + "\\documents\\",
-            preout: hostname + "\\pre_out\\"
+            layoutFolder: hostname + "/layouts/",
+            postFolder: hostname + "/documents/posts/",
+            hostname: hostname + "/documents/",
+            preout: hostname + "/pre_out/"
         };
 
     logger.compiler("\n  Compiling page sets: 0/" + totalPageSets);

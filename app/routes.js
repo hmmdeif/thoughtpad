@@ -15,7 +15,7 @@ var registerRoutes = function (app) {
 
 // Check filesystem that the folder for the hostname exists before trying to serve it
 hostnameIsValid = function (hostname) {
-    return fs.existsSync(__dirname + '\\..\\out\\' + hostname);
+    return fs.existsSync(__dirname + '/../out/' + hostname);
 },
 
 routeToHostedApp = function *(ctx) {

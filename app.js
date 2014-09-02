@@ -33,6 +33,6 @@ case "development":
     startDevServer();
     break;
 case "production":
-    require('./app/app');
+    startDevServer();
     break;
 }

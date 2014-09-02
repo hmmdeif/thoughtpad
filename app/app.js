@@ -18,6 +18,18 @@ var koa = require('koa'),
         serve = require('koa-file-server')(realDirName, {
             index: true
         });
+    },
+    startListenServer = function *() {
+        yield getRealDirName();
+
+        app = module.exports = koa();
+        app.use(logger());
+        app.use(serve);
+        app.use(router(app));
+        routes.registerRoutes(app);
+
+        // Listen if the mocha test suite isn't importing the app
+        app.listen(config[mode].port);
     };
 
 if (cluster.isMaster && !module.parent) {
@@ -46,15 +58,6 @@ if (cluster.isMaster && !module.parent) {
 
 } else {
     co(function *() {
-        yield getRealDirName();
-
-        app = module.exports = koa();
-        app.use(logger());
-        app.use(serve);
-        app.use(router(app));
-        routes.registerRoutes(app);
-
-        // Listen if the mocha test suite isn't importing the app
-        app.listen(config[mode].port);
+        yield startListenServer();
     })();
 }

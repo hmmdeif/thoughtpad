@@ -8,7 +8,7 @@ var coffee = require('coffee-script'),
     config;
 
 var getBundles = function (hostname) {
-    config = require(hostname + "\\config.js");
+    config = require(hostname + "/config.js");
     return config.scriptCollections;
 },
 
@@ -53,8 +53,8 @@ compile = function *(hostname, cache) {
         exists,
         bundle;
 
-    _hostname = hostname + "\\documents\\scripts\\";
-    _preout = hostname + "\\pre_out\\scripts\\";
+    _hostname = hostname + "/documents/scripts/";
+    _preout = hostname + "/pre_out/scripts/";
 
     yield fs.mkdir(_preout);
     logger.compiler("\n  Bundling javascript files: 0/" + totalBundles);

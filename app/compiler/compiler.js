@@ -6,7 +6,7 @@ var js = require('./javascript'),
     fsp = require('co-fs-plus');
 
 var getHostnames = function *() {
-    return yield fs.readdir(__dirname + "\\..\\..\\src\\");
+    return yield fs.readdir(__dirname + "/../../src/");
 },
 
 cleanPreout = function *(preoutFolder) {
@@ -17,10 +17,10 @@ cleanPreout = function *(preoutFolder) {
 },
 
 copyFile = function *(file, data) {
-    var realPart = file.split('out\\')[0],
+    var realPart = file.split('out/')[0],
         realFile = yield fs.realpath(realPart)
-        file = file.replace(realPart, realFile + "\\"),
-        folders = file.split('\\'),
+        file = file.replace(realPart, realFile + "/").replace(/\\/g, "/"),
+        folders = file.split('/'),
         i = 0,
         currentFolder = "",
         exists = false,
@@ -31,10 +31,10 @@ copyFile = function *(file, data) {
     for (i; i < len; i++) {
         currentFolder += separator + folders[i];
         exists = yield fs.exists(currentFolder);
-        if (!exists) {
+        if (!exists && currentFolder !== "") {
             yield fs.mkdir(currentFolder);
         }
-        separator = "\\";
+        separator = "/";
     }
     yield fs.writeFile(file, data);
 },
@@ -81,7 +81,7 @@ removeDirectory = function *(folder) {
         stat;
 
     for (i; i < len; i++) {
-        curPath = folder + "\\" + files[i];
+        curPath = folder + "/" + files[i];
         isDirectory = false;
 
         stat = yield fs.lstat(curPath);
@@ -114,11 +114,11 @@ module.exports = {
         logger.compiler('\nStarting site compilation...');
         for (i; i < len; i++) {
             logger.compiler('\nCompiling ' + hostnames[i] + ":");
-            currentHostname = __dirname + "\\..\\..\\src\\" + hostnames[i];
-            outDirectory = __dirname + "\\..\\..\\out\\" + hostnames[i];
-            preoutDirectory = currentHostname + "\\pre_out\\";
-            staticFileDirectory = currentHostname + "\\files\\";
-            yield cleanPreout(currentHostname + "\\pre_out\\");
+            currentHostname = __dirname + "/../../src/" + hostnames[i];
+            outDirectory = __dirname + "/../../out/" + hostnames[i];
+            preoutDirectory = currentHostname + "/pre_out/";
+            staticFileDirectory = currentHostname + "/files/";
+            yield cleanPreout(currentHostname + "/pre_out/");
 
             yield js.compile(currentHostname, cache);
             yield css.compile(currentHostname, cache);

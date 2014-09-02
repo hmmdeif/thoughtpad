@@ -9,7 +9,7 @@ var stylus = require('stylus'),
     config;
 
 var getBundles = function (hostname) {
-    config = require(hostname + "\\config.js");
+    config = require(hostname + "/config.js");
     return config.cssCollections;
 },
 
@@ -54,8 +54,8 @@ compile = function *(hostname, cache) {
         exists,
         bundle;
 
-    _hostname = hostname + "\\documents\\styles\\";
-    _preout = hostname + "\\pre_out\\styles\\";
+    _hostname = hostname + "/documents/styles/";
+    _preout = hostname + "/pre_out/styles/";
 
     yield fs.mkdir(_preout);
     logger.compiler("\n  Bundling stylesheet files: 0/" + totalBundles);

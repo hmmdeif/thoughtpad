@@ -8,8 +8,8 @@ module.exports = {
         process.stdout.write(clc.yellowBright(text));
     },
     clearCompiler: function (text) {
-        process.stdout.clearLine();
-        process.stdout.cursorTo(0);
+        if (process.stdout.clearLine) process.stdout.clearLine();
+        if (process.stdout.cursorTo) process.stdout.cursorTo(0);
         process.stdout.write(clc.yellowBright(text));
     },
     error: function (text) {

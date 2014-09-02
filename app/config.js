@@ -6,7 +6,7 @@ module.exports = {
         bundleCss: true
     },
     production: {
-        port: 3000,
+        port: 80,
         bundleJs: true,
         bundleCss: true
     }
