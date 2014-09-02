@@ -49,7 +49,7 @@ This will install the test suite framework globally so you can run mocha in the 
         * styles - for your css/styl/... files
     * files - static files that will be copied to the directory route on compilation (favicon.ico goes here for instance)
     * layouts - for your layout containers that your content gets injected into
-    * partials - for reuseable dynamic content
+    * partials - for reusable dynamic content
     * config.js - an object that contains all metadata for the content
 * out - the compiled sites split by their domain name
 * admin - a shared area for all domains to manage content
