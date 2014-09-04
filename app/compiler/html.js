@@ -145,8 +145,30 @@ compilePage = function *(page, folder, layoutData, folderLocations, config) {
     return contents;
 },
 
+sortPages = function (pages, sortBy) {
+    var page,
+        sortedArr = [];
+
+    if (pages && sortBy) {
+        for (page in pages) {
+            if (pages[page][sortBy]) {
+                sortedArr.push({ name: page, value: pages[page][sortBy]});
+            }
+        }
+
+        sortedArr.sort(function (a, b) {
+            if (a.value > b.value) return -1;
+            if (a.value < b.value) return 1;
+            return 0;
+        });
+    }
+
+    return sortedArr;
+},
+
 compilePages = function *(pages, folder, layoutData, count, totalPageSets, folderLocations, config) {
     var page,
+        sortedPages,
         exists;
 
     if (pages) {
@@ -162,6 +184,7 @@ compilePages = function *(pages, folder, layoutData, count, totalPageSets, folde
 
             // Compile the very bottom of the stack first so that when we go up we can dynamically add the content in
             pages[page].pages = yield compilePages(pages[page].pages, folder + "/" + page + "/", layoutData, count, totalPageSets, folderLocations, config);
+            pages[page].sortedPages = sortPages(pages[page].pages, pages[page].sortBy);
 
             // Now compile the current level as there will likely be a dependency
             pages[page].content = yield compilePage(pages[page], folder, layoutData, folderLocations, config);
