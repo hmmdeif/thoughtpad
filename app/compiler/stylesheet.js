@@ -1,9 +1,13 @@
 var stylus = require('stylus'),
     nib = require('nib'),
     fs = require('co-fs'),
+    fsp = require('co-fs-plus'),
     co = require('co'),
+    path = require('path'),
     uglify = require('uglifycss'),
     logger = require('./../logger'),
+    appConfig = require('./../config'),
+    fileWriter = require('./fileWriter'),
     _hostname,
     _preout,
     config;
@@ -22,23 +26,27 @@ removeNonBundledFiles = function *(compiledFiles) {
     }
 },
 
-compileScript = function *(filepath, newFileName) {
-    var parts = filepath.split("."),
-        ext = parts[parts.length - 1],
+compileScript = function *(file, currentFolder, newFolder, compiledFiles) {
+    var ext = path.extname(file),
+        filepath = currentFolder + file,
+        newFilePath = newFolder + path.basename(file, ext),
         contents;
 
     switch (ext) {
-    case "styl":
+    case ".styl":
         contents = yield fs.readFile(filepath, 'utf8');
         contents = stylus(contents).use(nib()).render()
-        yield fs.writeFile(newFileName, contents);
+        yield fs.writeFile(newFilePath, contents);
         break;
-    case "css":
+    case ".css":
     default:
         contents = yield fs.readFile(filepath, 'utf8');
-        yield fs.writeFile(newFileName, contents)
+        newFilePath += ".css";
+        yield fs.writeFile(newFilePath, contents)
         break;
     }
+
+    if (compiledFiles)  compiledFiles.push(newFilePath);
     return;
 };
 
@@ -58,24 +66,36 @@ compile = function *(hostname, cache) {
     _preout = hostname + "/pre_out/styles/";
 
     yield fs.mkdir(_preout);
-    logger.compiler("\n  Bundling stylesheet files: 0/" + totalBundles);
 
-    for (bundle in bundles) {
-        files = bundles[bundle];
-        i = 0;
-        len = files.length;
-        compiledFiles = [];
-        count++;
-        logger.clearCompiler("  Bundling stylesheet files: " + count + "/" + totalBundles);
+    if (appConfig[appConfig.mode].bundleJs) {
+        logger.compiler("\n  Bundling stylesheet files: 0/" + totalBundles);
+        for (bundle in bundles) {
+            files = bundles[bundle];
+            i = 0;
+            len = files.length;
+            compiledFiles = [];
+            count++;
+            logger.clearCompiler("  Bundling stylesheet files: " + count + "/" + totalBundles);
 
-        for (i; i < len; i++) {
-            compiledFiles.push(_preout + i.toString() + '.css');
-            yield compileScript(_hostname + files[i], compiledFiles[i]);
+            for (i; i < len; i++) {
+                yield compileScript(files[i], _hostname, _preout, compiledFiles);
+            }
+
+            result = uglify.processFiles(compiledFiles);
+            yield removeNonBundledFiles(compiledFiles);
+            yield fs.writeFile(_preout + bundle + ".css", result);
         }
+    } else {
+        bundles = yield fsp.readdir(_hostname, null, []);
+        i = 0;
+        len = bundles.length;
+        totalBundles = len > 0 ? len - 1 : 0;
 
-        result = uglify.processFiles(compiledFiles);
-        yield fs.writeFile(_preout + bundle + ".css", result);
-        yield removeNonBundledFiles(compiledFiles);
+        logger.compiler("\n  Compiling stylesheet files: 0/" + totalBundles);
+        for (i; i < len; i++) {
+            yield compileScript(path.basename(bundles[i]), _hostname, _preout);
+            logger.clearCompiler("  Compiling stylesheet files: " + i + "/" + totalBundles);
+        }
     }
     logger.info(" Done!");
 }

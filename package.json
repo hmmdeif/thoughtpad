@@ -24,7 +24,9 @@
     "stylus": "~0.47.3",
     "nib": "~1.0.3",
     "cli-color": "~0.3.2",
-    "nodemon": "~1.2.1"
+    "nodemon": "~1.2.1",
+    "primus": "~2.4.5",
+    "ws": "~0.4.32"
   },
   "devDependencies": {
     "should": "~3.3.2",

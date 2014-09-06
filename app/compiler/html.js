@@ -1,6 +1,8 @@
 var coffee = require('coffeekup'),
     fs = require('co-fs'),
     co = require('co'),
+    path = require('path'),
+    liveReload = require('./liveReload'),
     minifier = require('html-minifier').minify,
     logger = require('./../logger'),
     markdown = require('markdown').markdown,
@@ -16,9 +18,9 @@ rewriteBundles = function (page, folderLocations, newFileName, config) {
         p,
         i = 0,
         len,
-        parts = page.url.split("."),
-        ext = parts[parts.length - 1],
-        cleanPageUrl = page.url.replace(".html." + ext, "/");
+        ext = path.extname(page.url),
+        collection,
+        cleanPageUrl = page.url.replace(".html" + ext, "/");
 
     levelsForBundles = newFileName.replace(folderLocations.preout, "").split("/").length;
     for (i; i < levelsForBundles; i++) {
@@ -26,24 +28,32 @@ rewriteBundles = function (page, folderLocations, newFileName, config) {
     }
 
     // If we're not bundling then we want to pass the array of files rather than the bundle name
-    if (!appConfig[appConfig.mode].bundleJs) {
-        page.scriptBundle = config.scriptCollections[page.scriptBundle];
+    if (!appConfig[appConfig.mode].bundleJs && typeof page.scriptBundle !== "object") {
+
+        collection = config.scriptCollections[page.scriptBundle].slice();
+        page.scriptBundle = [];
         i = 0;
-        len = page.scriptBundle.length;
+        len = collection.length;
         for (i; i < len; i++) {
-            page.scriptBundle[i] = levelString + "scripts/" + page.scriptBundle[i];
+            page.scriptBundle.push(levelString + "scripts/" + collection[i]);
         }
-    } else {
+
+        // Add the live reload script if we're in development mode
+        if (appConfig.mode === "development") {
+            page.scriptBundle.push(levelString + "scripts/" + liveReload.injectScript());
+        }
+    } else if (page.scriptBundle.indexOf("scripts/") === -1 && appConfig[appConfig.mode].bundleJs) {
         page.scriptBundle = levelString + "scripts/" + page.scriptBundle;
     }
-    if (!appConfig[appConfig.mode].bundleCss) {
-        page.cssBundle = config.cssCollections[page.cssBundle];
+    if (!appConfig[appConfig.mode].bundleCss && typeof page.cssBundle !== "object") {
+        collection = config.cssCollections[page.cssBundle].slice();
+        page.cssBundle = [];
         i = 0;
-        len = page.cssBundle.length;
+        len = collection.length;
         for (i; i < len; i++) {
-            page.cssBundle[i] = levelString + "styles/" + page.cssBundle[i];
+            page.cssBundle.push(levelString + "styles/" + collection[i]);
         }
-    } else {
+    } else if (page.cssBundle.indexOf("styles/") === -1 && appConfig[appConfig.mode].bundleCss) {
          page.cssBundle = levelString + "styles/" + page.cssBundle;
     }
 
@@ -53,21 +63,21 @@ rewriteBundles = function (page, folderLocations, newFileName, config) {
             page.pages[p].url = page.url + p;
         }
     }
+
 },
 
 compileLayout = function *(page, newFileName, layoutData, config, folderLocations) {
-    var parts = layoutData[page.layout].url.split("."),
-        ext = parts[parts.length - 1],
+    var ext = path.extname(layoutData[page.layout].url),
         layoutContents = layoutData[page.layout].contents,
         contents;
 
     rewriteBundles(page, folderLocations, newFileName, config);
 
     switch (ext) {
-    case "coffee":
+    case ".coffee":
         contents = coffee.render(layoutContents, { document: page, site: config.templateData.site, func: config.templateData.func });
         break;
-    case "html":
+    case ".html":
     default:
 
         break;
@@ -78,11 +88,14 @@ compileLayout = function *(page, newFileName, layoutData, config, folderLocation
         page.content = contents;
         yield compileLayout(page, newFileName, layoutData, config, folderLocations);
     } else {
-        yield fs.writeFile(newFileName, minifier(contents, { collapseWhitespace: true }));
+        if (appConfig.mode !== "development") {
+            contents = minifier(contents, { collapseWhitespace: true })
+        }
+        yield fs.writeFile(newFileName, contents);
 
         // The index is a special case page that sits in the topmost directory
         if (page.index) {
-            yield fs.writeFile(folderLocations.preout + "index.html", minifier(contents, { collapseWhitespace: true }));
+            yield fs.writeFile(folderLocations.preout + "index.html", contents);
         }
     }
 
@@ -109,24 +122,23 @@ getLayoutData = function *(layouts, folderLocations, layoutData, dependsOn) {
 },
 
 compilePage = function *(page, folder, layoutData, folderLocations, config) {
-    var parts = page.url.split("."),
-        ext = parts[parts.length - 1],
+    var ext = path.extname(page.url),
         filepath = folderLocations.postFolder + page.url,
-        folderName = folderLocations.preout + folder + page.url.replace(".html." + ext, "/"),
+        folderName = folderLocations.preout + folder + page.url.replace(".html" + ext, "/"),
         newFileName = folderName + "index.html",
         exists = yield fs.exists(folderName),
         contents;
 
     switch (ext) {
-    case "md":
+    case ".md":
         contents = yield fs.readFile(filepath, 'utf8');
         contents = markdown.toHTML(contents);
         break;
-    case "coffee":
+    case ".coffee":
         contents = yield fs.readFile(filepath, 'utf8');
         contents = coffee.render(contents, { document: page });
         break;
-    case "html":
+    case ".html":
     default:
 
         break;
@@ -139,8 +151,6 @@ compilePage = function *(page, folder, layoutData, folderLocations, config) {
     if (page.layout) {
         page.content = contents;
         yield compileLayout(page, newFileName, layoutData, config, folderLocations);
-    } else {
-        yield fs.writeFile(newFileName, contents);
     }
     return contents;
 },
