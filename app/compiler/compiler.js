@@ -100,7 +100,7 @@ module.exports = {
             staticFileDirectory = currentHostname + "/files/";
             yield cleanPreout(currentHostname + "/pre_out/");
 
-            yield js.compile(currentHostname, cache);
+            yield js.compile(currentHostname, hostnames[i], cache);
             yield css.compile(currentHostname, cache);
             yield html.compile(currentHostname, cache);
 

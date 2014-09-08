@@ -41,6 +41,7 @@ rewriteBundles = function (page, folderLocations, newFileName, config) {
         // Add the live reload script if we're in development mode
         if (appConfig.mode === "development") {
             page.scriptBundle.push(levelString + "scripts/" + liveReload.injectScript());
+            page.scriptBundle.push(levelString + "scripts/" + liveReload.browserScript());
         }
     } else if (page.scriptBundle.indexOf("scripts/") === -1 && appConfig[appConfig.mode].bundleJs) {
         page.scriptBundle = levelString + "scripts/" + page.scriptBundle;

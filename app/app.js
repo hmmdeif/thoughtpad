@@ -1,4 +1,5 @@
 var koa = require('koa'),
+    http = require('http'),
     router = require('koa-router'),
     logger = require('koa-logger'),
     app,
@@ -13,6 +14,7 @@ var koa = require('koa'),
     numCPUs = require('os').cpus().length,
     serve,
     worker,
+    server,
     co = require('co'),
     getRealDirName = function *() {
         var realDirName = yield fs.realpath(__dirname + "/../out/");
@@ -29,8 +31,7 @@ var koa = require('koa'),
         app.use(router(app));
         routes.registerRoutes(app);
 
-        app.listen(config[mode].port);
-        return app;
+        return http.createServer(app.callback());
     };
 
 if (cluster.isMaster && !module.parent) {
@@ -46,7 +47,10 @@ if (cluster.isMaster && !module.parent) {
         yield getRealDirName();
 
         if (config.mode === "development") {
-            liveReload.start(yield startListenServer());
+            server = yield startListenServer();
+            liveReload.start(server);
+            server.listen(config[mode].port);
+
         } else {
             // Fork workers - one for each CPU
             applogger.info('\nCreating ' + (numCPUs - 1) + ' server workers');
@@ -62,6 +66,7 @@ if (cluster.isMaster && !module.parent) {
 
 } else if (config.mode !== "development") {
     co(function *() {
-        yield startListenServer();
+        server = yield startListenServer();
+        server.listen(config[mode].port);
     })();
 }

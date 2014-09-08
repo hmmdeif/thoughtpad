@@ -50,7 +50,7 @@ compileScript = function *(file, currentFolder, newFolder, compiledFiles) {
     return;
 };
 
-compile = function *(hostname, cache) {
+compile = function *(hostname, url, cache) {
     var compiledFiles = [],
         result,
         bundles = getBundles(hostname),
@@ -101,7 +101,7 @@ compile = function *(hostname, cache) {
         }
 
         if (appConfig.mode === "development") {
-            yield liveReload.saveScript(_preout);
+            yield liveReload.saveScript(_preout, url);
         }
     }
     logger.info(" Done!");
