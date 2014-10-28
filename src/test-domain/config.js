@@ -80,6 +80,7 @@ module.exports = {
     tags: {
 
     },
+    topPages: [],
     pages: {
 
     },

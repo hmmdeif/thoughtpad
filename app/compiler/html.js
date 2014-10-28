@@ -58,25 +58,18 @@ rewriteBundles = function (page, folderLocations, newFileName, config) {
          page.cssBundle = levelString + "styles/" + page.cssBundle;
     }
 
-    page.url = levelString + cleanPageUrl;
-    if (page.pages) {
-        for (p in page.pages) {
-            page.pages[p].url = page.url + p;
-        }
-    }
-
 },
 
-compileLayout = function *(page, newFileName, layoutData, config, folderLocations) {
-    var ext = path.extname(layoutData[page.layout].url),
-        layoutContents = layoutData[page.layout].contents,
+compileLayout = function *(pages, page, layout, newFileName, layoutData, config, folderLocations) {
+    var ext = path.extname(layoutData[layout].url),
+        layoutContents = layoutData[layout].contents,
         contents;
 
     rewriteBundles(page, folderLocations, newFileName, config);
 
     switch (ext) {
     case ".coffee":
-        contents = coffee.render(layoutContents, { document: page, site: config.templateData.site, func: config.templateData.func });
+        contents = coffee.render(layoutContents, { document: page, site: config.templateData.site, func: config.templateData.func, pages: pages });
         break;
     case ".html":
     default:
@@ -84,16 +77,14 @@ compileLayout = function *(page, newFileName, layoutData, config, folderLocation
         break;
     }
 
-    if (layoutData[page.layout].dependsOn) {
-        page.layout = layoutData[page.layout].dependsOn;
+    if (layoutData[layout].dependsOn) {     
         page.content = contents;
-        yield compileLayout(page, newFileName, layoutData, config, folderLocations);
-    } else {
+        yield compileLayout(pages, page, layoutData[layout].dependsOn, newFileName, layoutData, config, folderLocations);
+    } else  {
         if (appConfig.mode !== "development") {
             contents = minifier(contents, { collapseWhitespace: true })
         }
         yield fs.writeFile(newFileName, contents);
-
         // The index is a special case page that sits in the topmost directory
         if (page.index) {
             yield fs.writeFile(folderLocations.preout + "index.html", contents);
@@ -122,27 +113,30 @@ getLayoutData = function *(layouts, folderLocations, layoutData, dependsOn) {
     return layoutData;
 },
 
-compilePage = function *(page, folder, layoutData, folderLocations, config) {
+compilePage = function *(pages, page, folder, layoutData, folderLocations, config) {
     var ext = path.extname(page.url),
         filepath = folderLocations.postFolder + page.url,
-        folderName = folderLocations.preout + folder + page.url.replace(".html" + ext, "/"),
+        cleanPageUrl = page.url.replace(".html" + ext, "/"),
+        folderName = folderLocations.preout + folder + cleanPageUrl,
         newFileName = folderName + "index.html",
         exists = yield fs.exists(folderName),
-        contents;
+        contents = page.content;
 
-    switch (ext) {
-    case ".md":
-        contents = yield fs.readFile(filepath, 'utf8');
-        contents = markdown.toHTML(contents);
-        break;
-    case ".coffee":
-        contents = yield fs.readFile(filepath, 'utf8');
-        contents = coffee.render(contents, { document: page });
-        break;
-    case ".html":
-    default:
+    if (!contents) {
+        switch (ext) {
+        case ".md":
+            contents = yield fs.readFile(filepath, 'utf8');
+            contents = markdown.toHTML(contents);
+            break;
+        case ".coffee":
+            contents = yield fs.readFile(filepath, 'utf8');
+            contents = coffee.render(contents, { document: page, pages: pages });
+            break;
+        case ".html":
+        default:
 
-        break;
+            break;
+        }
     }
 
     if (!exists) {
@@ -151,19 +145,22 @@ compilePage = function *(page, folder, layoutData, folderLocations, config) {
 
     if (page.layout) {
         page.content = contents;
-        yield compileLayout(page, newFileName, layoutData, config, folderLocations);
+        page.fullUrl = folder + cleanPageUrl;
+        yield compileLayout(pages, page, page.layout, newFileName, layoutData, config, folderLocations);
     }
     return contents;
 },
 
-sortPages = function (pages, sortBy) {
-    var page,
+sortPages = function (pageObjs, pages, sortBy) {
+    var i = 0,
+        len,
         sortedArr = [];
 
     if (pages && sortBy) {
-        for (page in pages) {
-            if (pages[page][sortBy]) {
-                sortedArr.push({ name: page, value: pages[page][sortBy]});
+        len = pages.length;
+        for (i; i < len; i++) {
+            if (pageObjs[pages[i]][sortBy]) {
+                sortedArr.push({ name: pages[i], value: pageObjs[pages[i]][sortBy]});
             }
         }
 
@@ -177,13 +174,17 @@ sortPages = function (pages, sortBy) {
     return sortedArr;
 },
 
-compilePages = function *(pages, folder, layoutData, count, totalPageSets, folderLocations, config) {
+compilePages = function *(pages, pageNames, folder, layoutData, count, totalPageSets, folderLocations, config) {
     var page,
-        sortedPages,
+        i = 0,
+        len,
         exists;
 
-    if (pages) {
-        for (page in pages) {
+    if (pageNames) {
+        len = pageNames.length;
+
+        for (i; i < len; i++) {
+            page = pageNames[i];
             exists = yield fs.exists(folderLocations.preout + folder);
             if (!exists) {
                 yield fs.mkdir(folderLocations.preout + folder);
@@ -194,20 +195,18 @@ compilePages = function *(pages, folder, layoutData, count, totalPageSets, folde
             }
 
             // Compile the very bottom of the stack first so that when we go up we can dynamically add the content in
-            pages[page].pages = yield compilePages(pages[page].pages, folder + "/" + page + "/", layoutData, count, totalPageSets, folderLocations, config);
-            pages[page].sortedPages = sortPages(pages[page].pages, pages[page].sortBy);
+            yield compilePages(pages, pages[page].pages, folder + page + "/", layoutData, count, totalPageSets, folderLocations, config);
+            pages[page].sortedPages = sortPages(pages, pages[page].pages, pages[page].sortBy);
 
             // Now compile the current level as there will likely be a dependency
-            pages[page].content = yield compilePage(pages[page], folder, layoutData, folderLocations, config);
+            pages[page].content = yield compilePage(pages, pages[page], folder, layoutData, folderLocations, config);
 
-            if (folder === "") {
+            if (folder === "/") {
                 count++;
                 logger.clearCompiler("  Compiling page sets: " + count + "/" + totalPageSets);
             }
         }
     }
-
-    return pages;
 },
 
 compile = function *(hostname, cache) {
@@ -215,8 +214,9 @@ compile = function *(hostname, cache) {
         result,
         config = getConfig(hostname),
         layouts = config.layouts,
+        topPages = config.topPages,
         pages = config.pages,
-        totalPageSets = Object.keys(pages).length,
+        totalPageSets = topPages.length,
         count = 0,
         i,
         len,
@@ -236,7 +236,7 @@ compile = function *(hostname, cache) {
     layoutData = yield getLayoutData(layouts, folderLocations);
 
     // Compile each page in turn
-    yield compilePages(pages, "", layoutData, count, totalPageSets, folderLocations, config);
+    yield compilePages(pages, topPages, "/", layoutData, count, totalPageSets, folderLocations, config);
     logger.info(" Done!");
 };
 
