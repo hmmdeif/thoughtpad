@@ -8,7 +8,6 @@ var koa = require('koa'),
     routes = require('./routes'),
     cluster = require('cluster'),
     config = require('./config'),
-    liveReload = require('./compiler/liveReload'),
     fs = require('co-fs'),
     mode = config.mode,
     numCPUs = require('os').cpus().length,
@@ -18,7 +17,8 @@ var koa = require('koa'),
     co = require('co'),
     getRealDirName = function *() {
         var realDirName = yield fs.realpath(__dirname + "/../out/");
-        serve = require('koa-file-server')(realDirName, {
+        serve = require('koa-file-server')({
+            root: realDirName,
             index: true
         });
     },
@@ -48,7 +48,6 @@ if (cluster.isMaster && !module.parent) {
 
         if (config.mode === "development") {
             server = yield startListenServer();
-            liveReload.start(server);
             server.listen(config[mode].port);
 
         } else {
@@ -60,7 +59,7 @@ if (cluster.isMaster && !module.parent) {
         }
         applogger.info("\nListening on port " + config[mode].port);
 
-         yield compiler.compile(serve.cache);
+        yield compiler.compile(server, serve.cache, mode);
     })();
 
 

@@ -1,13 +1,9 @@
 module.exports = {
     mode: 'development',
     development: {
-        port: 3000,
-        bundleJs: false,
-        bundleCss: false
+        port: 3000
     },
     production: {
-        port: 3000,
-        bundleJs: true,
-        bundleCss: true
+        port: 3000
     }
 }

@@ -25,17 +25,17 @@ There are a number of user and developer friendly static site applications for n
 ## Running
 
 `npm install`
-`node --harmony app`
+`node app`
 
-Note that you need the minimum node engine (>=0.11.9) that allows generators.
+Note that you need the minimum node engine (>=0.11.x) that allows generators.
 
 ## Test
 
 `npm -g install mocha`
 
-This will install the test suite framework globally so you can run mocha in the command line. Then run the following command in the test folder:
+This will install the test suite framework globally so you can run mocha in the command line. Then run the following command:
 
-`mocha --harmony-generators test`
+`mocha --harmony-generators`
 
 ## Directory Structure
 
@@ -50,7 +50,6 @@ This will install the test suite framework globally so you can run mocha in the 
     * partials - for reusable dynamic content
     * config.js - an object that contains all metadata for the content
 * out - the compiled sites split by their domain name
-* admin - a shared area for all domains to manage content
 
 ## License
 

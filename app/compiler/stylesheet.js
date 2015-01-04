@@ -1,102 +1,130 @@
-var stylus = require('stylus'),
-    nib = require('nib'),
-    fs = require('co-fs'),
+var fs = require('co-fs'),
     fsp = require('co-fs-plus'),
-    co = require('co'),
-    path = require('path'),
-    uglify = require('uglifycss'),
     logger = require('./../logger'),
-    appConfig = require('./../config'),
-    fileWriter = require('./fileWriter'),
-    _hostname,
-    _preout,
-    config;
+    fileWriter = require('./fileWriter');
 
-var getBundles = function (hostname) {
-    config = require(hostname + "/config.js");
-    return config.cssCollections;
-},
-
-removeNonBundledFiles = function *(compiledFiles) {
+var preCompileRequest = function *(thoughtpad, compScripts) {
     var i = 0,
-        len = compiledFiles.length;
+        j = 1,
+        len,
+        splits,
+        ext,
+        contents,
+        name;
+
+    scripts = yield fsp.readdir(thoughtpad.folders.stylesheets, null, []);
+    len = scripts.length;
+
+    // Here is the opportunity to add any extra scripts at runtime
+    thoughtpad.subscribe("css-precompile-complete", function *(res) {
+        compScripts[res.name] = {
+            contents: res.contents,
+            ext: res.ext
+        };
+        logger.clearCompiler("  Adding " + j + " extra css files");
+        j++;
+    });
+
+    logger.compiler("\n  Reading css files: 0/" + len);
 
     for (i; i < len; i++) {
-        yield fs.unlink(compiledFiles[i]);
+        splits = scripts[i].split(".");
+        ext = splits[splits.length - 1];
+        contents = yield fs.readFile(scripts[i], 'utf8');
+
+        splits = scripts[i].replace(/\\/g, "/").split("/");
+        name = splits[splits.length - 1].split(".")[0];
+        compScripts[name] = { ext: ext, contents: contents };
+        
+        logger.clearCompiler("  Reading css files: " + (i + 1) + "/" + len);
+    } 
+
+    yield thoughtpad.notify("css-precompile-request", {});
+},
+
+compileRequest = function *(thoughtpad, compScripts) {
+    var script,
+        i = 1,
+        totalScripts = Object.keys(compScripts).length;
+
+    // Save all the compied js files to an object
+    thoughtpad.subscribe("css-compile-complete", function *(res) {
+        compScripts[res.name] = res.contents;
+    });
+
+    thoughtpad.subscribe("css-compile-request", function *(res) {
+        if (res.ext === "css") {
+            compScripts[res.name] = res.contents;
+        }
+    });
+
+    logger.clearCompiler("  Compiling css files: 0/" + totalScripts);
+
+    for (script in compScripts) { 
+        yield thoughtpad.notify("css-compile-request", { ext: compScripts[script].ext, contents: compScripts[script].contents, name: script });
+        logger.clearCompiler("  Compiling css files: " + i + "/" + totalScripts);
+        i++;
+    } 
+},
+
+postCompileRequest = function *(thoughtpad, compScripts) {
+    var script,
+        i = 1,
+        totalScripts = Object.keys(compScripts).length;
+
+    thoughtpad.subscribe("css-postcompile-complete", function *(res) {
+        compScripts[res.name].contents = res.contents;        
+    });  
+
+    // Perform any post compilation functions on the compiled contents
+    for (script in compScripts) { 
+        logger.clearCompiler("  Performing post-compilation tasks on css files: " + i + "/" + totalScripts);
+        yield thoughtpad.notify("css-postcompile-request", { contents: compScripts[script], name: script });
+        i++;
     }
 },
 
-compileScript = function *(file, currentFolder, newFolder, compiledFiles) {
-    var ext = path.extname(file),
-        filepath = currentFolder + file,
-        newFilePath = newFolder + path.basename(file, ext),
-        contents;
+preOutputRequest = function *(thoughtpad, compScripts) {
+    var bundle,
+        i = 1,
+        totalScripts = Object.keys(compScripts).length;
 
-    switch (ext) {
-    case ".styl":
-        contents = yield fs.readFile(filepath, 'utf8');
-        contents = stylus(contents).use(nib()).render()
-        yield fs.writeFile(newFilePath, contents);
-        break;
-    case ".css":
-    default:
-        contents = yield fs.readFile(filepath, 'utf8');
-        newFilePath += ".css";
-        yield fs.writeFile(newFilePath, contents)
-        break;
-    }
-
-    if (compiledFiles)  compiledFiles.push(newFilePath);
-    return;
-};
-
-compile = function *(hostname, cache) {
-    var compiledFiles = [],
-        result,
-        bundles = getBundles(hostname),
-        totalBundles = Object.keys(bundles).length,
-        i,
-        count = 0,
-        len,
-        files,
-        exists,
-        bundle;
-
-    _hostname = hostname + "/documents/styles/";
-    _preout = hostname + "/pre_out/styles/";
-
-    yield fs.mkdir(_preout);
-
-    if (appConfig[appConfig.mode].bundleJs) {
-        logger.compiler("\n  Bundling stylesheet files: 0/" + totalBundles);
-        for (bundle in bundles) {
-            files = bundles[bundle];
-            i = 0;
-            len = files.length;
-            compiledFiles = [];
-            count++;
-            logger.clearCompiler("  Bundling stylesheet files: " + count + "/" + totalBundles);
-
-            for (i; i < len; i++) {
-                yield compileScript(files[i], _hostname, _preout, compiledFiles);
-            }
-
-            result = uglify.processFiles(compiledFiles);
-            yield removeNonBundledFiles(compiledFiles);
-            yield fs.writeFile(_preout + bundle + ".css", result);
+    thoughtpad.subscribe("css-preoutput-complete", function *(res) {
+        logger.clearCompiler("  Performing pre-out tasks on css files: " + i + "/" + totalScripts);       
+        for (bundle in compScripts) {
+            delete compScripts[bundle];
         }
-    } else {
-        bundles = yield fsp.readdir(_hostname, null, []);
-        i = 0;
-        len = bundles.length;
-        totalBundles = len > 0 ? len - 1 : 0;
-
-        logger.compiler("\n  Compiling stylesheet files: 0/" + totalBundles);
-        for (i; i < len; i++) {
-            yield compileScript(path.basename(bundles[i]), _hostname, _preout);
-            logger.clearCompiler("  Compiling stylesheet files: " + i + "/" + totalBundles);
+        for (bundle in res.bundles) {
+            compScripts[bundle] = res.bundles[bundle];
         }
-    }
+        i++;
+    });  
+
+    // Perform any preout functions
+    yield thoughtpad.notify("css-preoutput-request", { contents: compScripts });
+},
+
+compile = function *(thoughtpad, cache) {
+    var i = 0,
+        compScripts = {},
+        script,
+        totalScripts;
+
+    yield preCompileRequest(thoughtpad, compScripts);
+    yield compileRequest(thoughtpad, compScripts);
+    yield postCompileRequest(thoughtpad, compScripts);  
+    yield preOutputRequest(thoughtpad, compScripts);
+
+    // Finally output the files
+    totalScripts = Object.keys(compScripts).length;
+    i = 1;
+  
+    for (script in compScripts) {
+        logger.clearCompiler("  Writing css files to directory: " + i + "/" + totalScripts);
+        yield fileWriter.writeFile(thoughtpad.folders.preoutStylesheets + script + ".css", compScripts[script], "pre_out/");
+        i++;
+    }    
+
     logger.info(" Done!");
 }
 

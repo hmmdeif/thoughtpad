@@ -1,101 +1,93 @@
-var coffee = require('coffeekup'),
-    fs = require('co-fs'),
-    co = require('co'),
+var fs = require('co-fs'),
+    fsp = require('co-fs-plus'),
     path = require('path'),
-    liveReload = require('./liveReload'),
-    minifier = require('html-minifier').minify,
     logger = require('./../logger'),
-    markdown = require('markdown').markdown,
-    appConfig = require('./../config');
+    fileWriter = require('./fileWriter'),
+    extend = require('util')._extend;
 
-var getConfig = function (hostname) {
-    return require(hostname + "/config.js");
-},
+var compileLayout = function *(thoughtpad, pageName, layout, fullContent) {
+    var ext = path.extname(thoughtpad.config.layouts[layout].url).replace('.', ''),
+        layoutContents = thoughtpad.config.layouts[layout].contents,
+        contents,
+        document;
 
-rewriteBundles = function (page, folderLocations, newFileName, config) {
-    var levelsForBundles,
-        levelString = "",
-        p,
-        i = 0,
-        len,
-        ext = path.extname(page.url),
-        collection,
-        cleanPageUrl = page.url.replace(".html" + ext, "/");
+    thoughtpad.subscribe('html-compile-complete', 'layout', function *(res) {
+        contents = res.contents;
+    });
 
-    levelsForBundles = newFileName.replace(folderLocations.preout, "").split("/").length;
-    for (i; i < levelsForBundles; i++) {
-        levelString += "../"
+    document = extend({}, thoughtpad.config.pages[pageName]);
+    // If we extend then we lose the reference to the main config obj. This is beneficial as then we can pass in the compiled layout content
+    // whilst preserving the raw compiled content for other pages using different layouts. Dependent layouts can then use the previously compiled
+    // contents without worrying that they will overwrite the main thoughtpad config page contents object
+    if (fullContent) {
+        document.content = fullContent;
     }
 
-    // If we're not bundling then we want to pass the array of files rather than the bundle name
-    if (!appConfig[appConfig.mode].bundleJs && typeof page.scriptBundle !== "object") {
+    yield thoughtpad.notify('html-compile-request', { ext: ext, contents: layoutContents, name: layout, data: { document: document } });
 
-        collection = config.scriptCollections[page.scriptBundle].slice();
-        page.scriptBundle = [];
-        i = 0;
-        len = collection.length;
-        for (i; i < len; i++) {
-            page.scriptBundle.push(levelString + "scripts/" + collection[i]);
-        }
+    // Clean up the subscription as this function will be called for each page
+    thoughtpad.unsubscribe('html-compile-complete', 'layout');
 
-        // Add the live reload script if we're in development mode
-        if (appConfig.mode === "development") {
-            page.scriptBundle.push(levelString + "scripts/" + liveReload.injectScript());
-            page.scriptBundle.push(levelString + "scripts/" + liveReload.browserScript());
-        }
-    } else if (page.scriptBundle.indexOf("scripts/") === -1 && appConfig[appConfig.mode].bundleJs) {
-        page.scriptBundle = levelString + "scripts/" + page.scriptBundle;
-    }
-    if (!appConfig[appConfig.mode].bundleCss && typeof page.cssBundle !== "object") {
-        collection = config.cssCollections[page.cssBundle].slice();
-        page.cssBundle = [];
-        i = 0;
-        len = collection.length;
-        for (i; i < len; i++) {
-            page.cssBundle.push(levelString + "styles/" + collection[i]);
-        }
-    } else if (page.cssBundle.indexOf("styles/") === -1 && appConfig[appConfig.mode].bundleCss) {
-         page.cssBundle = levelString + "styles/" + page.cssBundle;
-    }
-
-},
-
-compileLayout = function *(pages, page, layout, newFileName, layoutData, config, folderLocations) {
-    var ext = path.extname(layoutData[layout].url),
-        layoutContents = layoutData[layout].contents,
-        contents;
-
-    rewriteBundles(page, folderLocations, newFileName, config);
-
-    switch (ext) {
-    case ".coffee":
-        contents = coffee.render(layoutContents, { document: page, site: config.templateData.site, func: config.templateData.func, pages: pages });
-        break;
-    case ".html":
-    default:
-
-        break;
-    }
-
-    if (layoutData[layout].dependsOn) {     
-        page.content = contents;
-        yield compileLayout(pages, page, layoutData[layout].dependsOn, newFileName, layoutData, config, folderLocations);
+    if (thoughtpad.config.layouts[layout].dependsOn) {     
+        thoughtpad.config.pages[pageName].fullContent = contents;
+        yield compileLayout(thoughtpad, pageName, thoughtpad.config.layouts[layout].dependsOn, contents);
     } else  {
-        if (appConfig.mode !== "development") {
-            contents = minifier(contents, { collapseWhitespace: true })
-        }
-        yield fs.writeFile(newFileName, contents);
-        // The index is a special case page that sits in the topmost directory
-        if (page.index) {
-            yield fs.writeFile(folderLocations.preout + "index.html", contents);
-        }
+        thoughtpad.config.pages[pageName].fullContent = contents;
     }
+},
+
+postCompilePage = function *(thoughtpad, pageName) {
+
+    thoughtpad.subscribe("html-postcompile-complete", function *(res) {
+        thoughtpad.config.pages[pageName].fullContent = res.contents;
+    }); 
+
+    yield thoughtpad.notify('html-postcompile-request', { contents: thoughtpad.config.pages[pageName].fullContent });
 
 },
 
-getLayoutData = function *(layouts, folderLocations, layoutData, dependsOn) {
+compilePage = function *(thoughtpad, pageName, folder) {
+    var ext = path.extname(thoughtpad.config.pages[pageName].url).replace('.', ''),
+        filepath = thoughtpad.folders.posts + thoughtpad.config.pages[pageName].url,
+        cleanPageUrl = thoughtpad.config.pages[pageName].url.replace("." + ext, "/"),
+        newFileName = thoughtpad.folders.preout + folder + cleanPageUrl + "index.html",
+        contents = thoughtpad.config.pages[pageName].content;
+
+    if (!contents) {
+        contents = yield fs.readFile(filepath, 'utf8'); 
+
+        thoughtpad.subscribe('html-compile-complete', 'page', function *(res) {
+            contents = res.contents;
+        });
+
+        yield thoughtpad.notify('html-compile-request', { ext: ext, contents: contents, name: pageName, data: { document: thoughtpad.config.pages[pageName] } });
+    
+        // Clean up the subscription as this function will be called for each page
+        thoughtpad.unsubscribe('html-compile-complete', 'page');
+    }
+
+    if (thoughtpad.config.pages[pageName].layout) {
+        thoughtpad.config.pages[pageName].content = contents;
+        thoughtpad.config.pages[pageName].fullUrl = folder + cleanPageUrl;
+        yield compileLayout(thoughtpad, pageName, thoughtpad.config.pages[pageName].layout);
+
+        // Run the postcompile events (usually called to minify the contents)
+        yield postCompilePage(thoughtpad, pageName);
+
+        logger.clearCompiler("  Writing page to file system");
+        yield fileWriter.writeFile(newFileName, thoughtpad.config.pages[pageName].fullContent, "pre_out/");
+        // The index is a special case page that sits in the topmost directory
+        if (thoughtpad.config.pages[pageName].index) {
+            yield fileWriter.writeFile(thoughtpad.folders.preout + "index.html", thoughtpad.config.pages[pageName].fullContent, "pre_out/");
+        }
+    }
+    return contents;
+},
+
+getLayoutData = function *(layouts, thoughtpad, dependsOn, layoutData) {
     var layout,
-        contents;
+        contents,
+        layoutData;
 
     if (!layoutData) {
         layoutData = {};
@@ -103,70 +95,37 @@ getLayoutData = function *(layouts, folderLocations, layoutData, dependsOn) {
 
     if (layouts) {
         for (layout in layouts) {
-            contents = yield fs.readFile(folderLocations.layoutFolder + layouts[layout].url, 'utf8');
+            contents = yield fs.readFile(thoughtpad.folders.layouts + layouts[layout].url, 'utf8');
             layoutData[layout] = { contents: contents, url: layouts[layout].url, dependsOn: dependsOn };
             if (layouts[layout].layouts) {
-                layoutData = yield getLayoutData(layouts[layout].layouts, folderLocations, layoutData, layout);
+                layoutData = yield getLayoutData(layouts[layout].layouts, thoughtpad, layout, layoutData);
             }
         }
     }
+
     return layoutData;
 },
 
-compilePage = function *(pages, page, folder, layoutData, folderLocations, config) {
-    var ext = path.extname(page.url),
-        filepath = folderLocations.postFolder + page.url,
-        cleanPageUrl = page.url.replace(".html" + ext, "/"),
-        folderName = folderLocations.preout + folder + cleanPageUrl,
-        newFileName = folderName + "index.html",
-        exists = yield fs.exists(folderName),
-        contents = page.content;
-
-    if (!contents) {
-        switch (ext) {
-        case ".md":
-            contents = yield fs.readFile(filepath, 'utf8');
-            contents = markdown.toHTML(contents);
-            break;
-        case ".coffee":
-            contents = yield fs.readFile(filepath, 'utf8');
-            contents = coffee.render(contents, { document: page, pages: pages });
-            break;
-        case ".html":
-        default:
-
-            break;
-        }
-    }
-
-    if (!exists) {
-        yield fs.mkdir(folderName);
-    }
-
-    if (page.layout) {
-        page.content = contents;
-        page.fullUrl = folder + cleanPageUrl;
-        yield compileLayout(pages, page, page.layout, newFileName, layoutData, config, folderLocations);
-    }
-    return contents;
-},
-
-sortPages = function (pageObjs, pages, sortBy) {
+sortPages = function (pages, pageName) {
     var i = 0,
         len,
+        sortBy = pages[pageName].sortBy,
+        order = (pages[pageName].sortOrder && pages[pageName].sortOrder === "asc") ? [1, -1] : [-1, 1],
+        page = pages[pageName],
         sortedArr = [];
 
-    if (pages && sortBy) {
-        len = pages.length;
+    if (page.pages && sortBy) {
+        len = page.pages.length;
         for (i; i < len; i++) {
-            if (pageObjs[pages[i]][sortBy]) {
-                sortedArr.push({ name: pages[i], value: pageObjs[pages[i]][sortBy]});
+            if (pages[page.pages[i]][sortBy]) {
+                sortedArr.push({ name: page.pages[i], value: pages[page.pages[i]][sortBy] });
             }
         }
 
+        // By default the sort order is desc (so latest posts appear at the top)
         sortedArr.sort(function (a, b) {
-            if (a.value > b.value) return -1;
-            if (a.value < b.value) return 1;
+            if (a.value > b.value) return order[0];
+            if (a.value < b.value) return order[1];
             return 0;
         });
     }
@@ -174,69 +133,51 @@ sortPages = function (pageObjs, pages, sortBy) {
     return sortedArr;
 },
 
-compilePages = function *(pages, pageNames, folder, layoutData, count, totalPageSets, folderLocations, config) {
-    var page,
-        i = 0,
-        len,
-        exists;
+compilePages = function *(thoughtpad, pages, folder) {
+    var i = 0, 
+        len;
 
-    if (pageNames) {
-        len = pageNames.length;
+    if (!folder) {
+        pages = thoughtpad.config.topPages || [];
+        folder = thoughtpad.config.startFolder;
+    }
 
+    if (pages) {
+        len = pages.length;
         for (i; i < len; i++) {
-            page = pageNames[i];
-            exists = yield fs.exists(folderLocations.preout + folder);
-            if (!exists) {
-                yield fs.mkdir(folderLocations.preout + folder);
-            }
-            exists = yield fs.exists(folderLocations.preout + folder + page);
-            if (!exists && pages[page].pages) {
-                yield fs.mkdir(folderLocations.preout + folder + page);
-            }
-
             // Compile the very bottom of the stack first so that when we go up we can dynamically add the content in
-            yield compilePages(pages, pages[page].pages, folder + page + "/", layoutData, count, totalPageSets, folderLocations, config);
-            pages[page].sortedPages = sortPages(pages, pages[page].pages, pages[page].sortBy);
+            yield compilePages(thoughtpad, thoughtpad.config.pages[pages[i]].pages, folder + pages[i] + "/");
 
+            // Sort the pages into the order specified by the config
+            logger.clearCompiler("  Ordering the html pages");
+            thoughtpad.config.pages[pages[i]].sortedPages = sortPages(thoughtpad.config.pages, pages[i])
+        
             // Now compile the current level as there will likely be a dependency
-            pages[page].content = yield compilePage(pages, pages[page], folder, layoutData, folderLocations, config);
-
-            if (folder === "/") {
-                count++;
-                logger.clearCompiler("  Compiling page sets: " + count + "/" + totalPageSets);
-            }
+            thoughtpad.config.pages[pages[i]].content = yield compilePage(thoughtpad, pages[i], folder);
         }
     }
 },
 
-compile = function *(hostname, cache) {
-    var compiledFiles = [],
-        result,
-        config = getConfig(hostname),
-        layouts = config.layouts,
-        topPages = config.topPages,
-        pages = config.pages,
-        totalPageSets = topPages.length,
-        count = 0,
-        i,
-        len,
-        files,
-        bundle,
-        layoutData,
-        folderLocations = {
-            layoutFolder: hostname + "/layouts/",
-            postFolder: hostname + "/documents/posts/",
-            hostname: hostname + "/documents/",
-            preout: hostname + "/pre_out/"
-        };
+compile = function *(thoughtpad, cache) {
 
-    logger.compiler("\n  Compiling page sets: 0/" + totalPageSets);
+    logger.compiler("\n  Reading layout data");
 
     // First save the layout data to memory (saves file io when compiling each page and it is unlikely to have many layouts)
-    layoutData = yield getLayoutData(layouts, folderLocations);
+    thoughtpad.config.layouts = yield getLayoutData(thoughtpad.config.layouts, thoughtpad);
+
+    logger.clearCompiler("  Handling precompilation for html pages");
+    yield thoughtpad.notify('html-precompile-all-request');
 
     // Compile each page in turn
-    yield compilePages(pages, topPages, "/", layoutData, count, totalPageSets, folderLocations, config);
+    thoughtpad.subscribe('html-compile-all-request', function *(res) {
+        yield compilePages(res.thoughtpad);
+    });
+
+    yield compilePages(thoughtpad);
+
+    logger.clearCompiler("  Handling postcompilation for html pages");
+    yield thoughtpad.notify('html-postcompile-all-request');
+
     logger.info(" Done!");
 };
 

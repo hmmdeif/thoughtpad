@@ -1,35 +1,42 @@
 {
   "name": "thoughtpad",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Hosted static site generated blog",
   "engines": {
-    "node": "0.11",
-    "npm": "1.4"
+    "node": "0.11.14",
+    "npm": "2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hmmdeif/thoughtpad.git"
   },
   "dependencies": {
     "koa": "~0.8.1",
     "koa-router": "~3.2.3",
     "koa-file-server": "~2.2.2",
     "koa-logger": "~1.2.2",
-    "thunkify": "~2.1.2",
-    "coffee-script": "~1.7.1",
-    "coffeekup": "~0.3.1edge",
-    "markdown": "~0.5.0",
     "co": "~3.1.0",
     "co-fs": "~1.2.0",
     "co-fs-plus": "~0.3.1",
-    "uglify-js": "~2.4.15",
-    "uglifycss": "~0.0.9",
-    "html-minifier": "~0.6.6",
-    "stylus": "~0.47.3",
-    "nib": "~1.0.3",
     "cli-color": "~0.3.2",
-    "nodemon": "~1.2.1",
-    "primus": "~2.4.5",
-    "ws": "~0.4.32"
+    "nodemon": "~1.2.1",    
+    "thoughtpad-plugin-manager": "git://github.com/hmmdeif/thoughtpad-plugin-manager.git#master",
+    "thoughtpad-plugin-compiler-stylus": "git://github.com/hmmdeif/thoughtpad-plugin-compiler-stylus.git#master",
+    "thoughtpad-plugin-compiler-markdown": "git://github.com/hmmdeif/thoughtpad-plugin-compiler-markdown.git#master",
+    "thoughtpad-plugin-compiler-coffeekup": "git://github.com/hmmdeif/thoughtpad-plugin-compiler-coffeekup.git#master",
+    "thoughtpad-plugin-minifier-javascript": "git://github.com/hmmdeif/thoughtpad-plugin-minifier-javascript.git#master",
+    "thoughtpad-plugin-minifier-css": "git://github.com/hmmdeif/thoughtpad-plugin-minifier-css.git#master",
+    "thoughtpad-plugin-minifier-html": "git://github.com/hmmdeif/thoughtpad-plugin-minifier-html.git#master",
+    "thoughtpad-plugin-bundler": "git://github.com/hmmdeif/thoughtpad-plugin-bundler.git#master",
+    "thoughtpad-plugin-compiler-coffeescript": "git://github.com/hmmdeif/thoughtpad-plugin-compiler-coffeescript.git#master",
+    "thoughtpad-plugin-livereload": "git://github.com/hmmdeif/thoughtpad-plugin-livereload.git#master"
   },
   "devDependencies": {
     "should": "~3.3.2",
     "mocha": "~1.21.4"
+  },
+  "main": "./app/app.js",
+  "scripts": {
+    "test": "node --harmony ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   }
 }
