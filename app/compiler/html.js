@@ -65,7 +65,7 @@ compilePage = function *(thoughtpad, pageName, folder) {
         // Clean up the subscription as this function will be called for each page
         thoughtpad.unsubscribe('html-compile-complete', 'page');
     }
-
+    
     if (thoughtpad.config.pages[pageName].layout) {
         thoughtpad.config.pages[pageName].content = contents;
         thoughtpad.config.pages[pageName].fullUrl = folder + cleanPageUrl;
@@ -152,8 +152,10 @@ compilePages = function *(thoughtpad, pages, folder) {
             logger.clearCompiler("  Ordering the html pages");
             thoughtpad.config.pages[pages[i]].sortedPages = sortPages(thoughtpad.config.pages, pages[i])
         
-            // Now compile the current level as there will likely be a dependency
-            thoughtpad.config.pages[pages[i]].content = yield compilePage(thoughtpad, pages[i], folder);
+            // Now compile the current level as there will likely be a dependency, but only if we haven't compiled it already
+            if (!thoughtpad.config.pages[pages[i]].fullUrl) {
+                thoughtpad.config.pages[pages[i]].content = yield compilePage(thoughtpad, pages[i], folder);
+            }
         }
     }
 },

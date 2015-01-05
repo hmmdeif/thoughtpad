@@ -92,6 +92,7 @@ describe("html compiler", function () {
         thoughtpad = man.initModules(config, 'test');
         thoughtpad.folders = folders;
         thoughtpad.config.startFolder = '/';
+        thoughtpad.config.pages.two.fullUrl = null;
 
         thoughtpad.subscribe('html-compile-request', function *(res) {
             result = "ok";
@@ -118,6 +119,7 @@ describe("html compiler", function () {
         thoughtpad = man.initModules(config, 'test');
         thoughtpad.folders = folders;
         thoughtpad.config.startFolder = '/';
+        thoughtpad.config.pages.two.fullUrl = null;
 
         thoughtpad.subscribe('html-postcompile-request', function *(res) {
             result = "ok";
@@ -126,6 +128,29 @@ describe("html compiler", function () {
         co(function *() {
             yield app.compile(thoughtpad, {});
             result.should.eql('ok');
+            done();
+        })();
+    });
+
+    it("should not compile pages if fullUrl exists on page object", function (done) {
+        var thoughtpad,
+            result = "";
+
+        delete require.cache[path.normalize(__dirname + '/start/example-config.js')];
+        
+        config = require('./start/example-config')
+        thoughtpad = man.initModules(config, 'test');
+        thoughtpad.folders = folders;
+        thoughtpad.config.startFolder = '/';
+        thoughtpad.config.pages.two.fullUrl = 'something';
+
+        thoughtpad.subscribe('html-postcompile-request', function *(res) {
+            result = "ok";
+        });
+
+        co(function *() {
+            yield app.compile(thoughtpad, {});
+            result.should.eql('');
             done();
         })();
     });
@@ -139,7 +164,7 @@ describe("html compiler", function () {
         config = require('./start/example-config')
         thoughtpad = man.initModules(config, 'test');
         thoughtpad.folders = folders;
-        thoughtpad.config.startFolder = '/';
+        thoughtpad.config.startFolder = '/';        
 
         co(function *() {
             yield app.compile(thoughtpad, {});
