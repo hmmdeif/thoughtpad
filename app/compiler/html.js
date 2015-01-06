@@ -49,8 +49,7 @@ postCompilePage = function *(thoughtpad, pageName) {
 compilePage = function *(thoughtpad, pageName, folder) {
     var ext = path.extname(thoughtpad.config.pages[pageName].url).replace('.', ''),
         filepath = thoughtpad.folders.posts + thoughtpad.config.pages[pageName].url,
-        cleanPageUrl = thoughtpad.config.pages[pageName].url.replace("." + ext, "/"),
-        newFileName = thoughtpad.folders.preout + folder + cleanPageUrl + "index.html",
+        newFileName = thoughtpad.folders.preout + folder + pageName + '/' + "index.html",
         contents = thoughtpad.config.pages[pageName].content;
 
     if (!contents) {
@@ -68,7 +67,7 @@ compilePage = function *(thoughtpad, pageName, folder) {
     
     if (thoughtpad.config.pages[pageName].layout) {
         thoughtpad.config.pages[pageName].content = contents;
-        thoughtpad.config.pages[pageName].fullUrl = folder + cleanPageUrl;
+        thoughtpad.config.pages[pageName].fullUrl = folder + pageName + '/';
         yield compileLayout(thoughtpad, pageName, thoughtpad.config.pages[pageName].layout);
 
         // Run the postcompile events (usually called to minify the contents)
