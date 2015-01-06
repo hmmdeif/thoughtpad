@@ -30,7 +30,8 @@
     "thoughtpad-plugin-bundler": "git://github.com/hmmdeif/thoughtpad-plugin-bundler.git#master",
     "thoughtpad-plugin-compiler-coffeescript": "git://github.com/hmmdeif/thoughtpad-plugin-compiler-coffeescript.git#master",
     "thoughtpad-plugin-livereload": "git://github.com/hmmdeif/thoughtpad-plugin-livereload.git#master",
-    "thoughtpad-plugin-tags": "git://github.com/hmmdeif/thoughtpad-plugin-tags.git#master"
+    "thoughtpad-plugin-tags": "git://github.com/hmmdeif/thoughtpad-plugin-tags.git#master",
+    "thoughtpad-plugin-multilanguage": "git://github.com/hmmdeif/thoughtpad-plugin-multilanguage.git#master"
   },
   "devDependencies": {
     "should": "~3.3.2",

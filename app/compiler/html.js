@@ -77,7 +77,11 @@ compilePage = function *(thoughtpad, pageName, folder) {
         yield fileWriter.writeFile(newFileName, thoughtpad.config.pages[pageName].fullContent, "pre_out/");
         // The index is a special case page that sits in the topmost directory
         if (thoughtpad.config.pages[pageName].index) {
-            yield fileWriter.writeFile(thoughtpad.folders.preout + "index.html", thoughtpad.config.pages[pageName].fullContent, "pre_out/");
+            exists = yield fs.exists(thoughtpad.folders.preout + "index.html");
+
+            if (!exists) {
+                yield fileWriter.writeFile(thoughtpad.folders.preout + "index.html", thoughtpad.config.pages[pageName].fullContent, "pre_out/");
+            }
         }
     }
     return contents;
