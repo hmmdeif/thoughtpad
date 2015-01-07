@@ -19,7 +19,8 @@
     "co-fs": "~1.2.0",
     "co-fs-plus": "~0.3.1",
     "cli-color": "~0.3.2",
-    "nodemon": "~1.2.1",    
+    "nodemon": "~1.2.1",
+    "thoughtpad-fileWriter": "git://github.com/hmmdeif/thoughtpad-fileWriter.git#master",
     "thoughtpad-plugin-manager": "git://github.com/hmmdeif/thoughtpad-plugin-manager.git#master",
     "thoughtpad-plugin-compiler-stylus": "git://github.com/hmmdeif/thoughtpad-plugin-compiler-stylus.git#master",
     "thoughtpad-plugin-compiler-markdown": "git://github.com/hmmdeif/thoughtpad-plugin-compiler-markdown.git#master",
@@ -31,7 +32,8 @@
     "thoughtpad-plugin-compiler-coffeescript": "git://github.com/hmmdeif/thoughtpad-plugin-compiler-coffeescript.git#master",
     "thoughtpad-plugin-livereload": "git://github.com/hmmdeif/thoughtpad-plugin-livereload.git#master",
     "thoughtpad-plugin-tags": "git://github.com/hmmdeif/thoughtpad-plugin-tags.git#master",
-    "thoughtpad-plugin-multilanguage": "git://github.com/hmmdeif/thoughtpad-plugin-multilanguage.git#master"
+    "thoughtpad-plugin-multilanguage": "git://github.com/hmmdeif/thoughtpad-plugin-multilanguage.git#master",
+    "thoughtpad-plugin-redirection": "git://github.com/hmmdeif/thoughtpad-plugin-redirection.git#master"
   },
   "devDependencies": {
     "should": "~3.3.2",

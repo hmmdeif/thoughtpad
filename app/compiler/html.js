@@ -2,7 +2,7 @@ var fs = require('co-fs'),
     fsp = require('co-fs-plus'),
     path = require('path'),
     logger = require('./../logger'),
-    fileWriter = require('./fileWriter'),
+    fileWriter = require('thoughtpad-fileWriter'),
     extend = require('util')._extend;
 
 var compileLayout = function *(thoughtpad, pageName, layout, fullContent) {

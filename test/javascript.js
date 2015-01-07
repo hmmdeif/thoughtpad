@@ -5,7 +5,7 @@ var should = require('should'),
     fs = require('co-fs'),
     path = require('path'),
     config = require('./start/example-config'),
-    fileWriter = require('./../app/compiler/fileWriter'),
+    fileWriter = require('thoughtpad-fileWriter'),
     folders = {
         preoutScripts: path.normalize(__dirname + "/pre_out/"),
         scripts: path.normalize(__dirname + "/start/inner/")

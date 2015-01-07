@@ -1,6 +1,6 @@
 var js = require('./javascript'),
     css = require('./stylesheet'),
-    fileWriter = require('./fileWriter'),
+    fileWriter = require('thoughtpad-fileWriter'),
     logger = require('./../logger'),
     html = require('./html'),
     fs = require('co-fs'),

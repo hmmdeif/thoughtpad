@@ -6,7 +6,7 @@ var should = require('should'),
     path = require('path'),
     config = require('./start/example-config'),
     extend = require('util')._extend,
-    fileWriter = require('./../app/compiler/fileWriter'),
+    fileWriter = require('thoughtpad-fileWriter'),
     folders = {
         layouts: path.normalize(__dirname + '/layouts/'),
         posts: path.normalize(__dirname + "/posts/"),

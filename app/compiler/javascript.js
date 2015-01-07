@@ -1,7 +1,7 @@
 var fs = require('co-fs'),
     fsp = require('co-fs-plus'),
     logger = require('./../logger'),
-    fileWriter = require('./fileWriter');
+    fileWriter = require('thoughtpad-fileWriter');
 
 var preCompileRequest = function *(thoughtpad, compScripts) {
     var i = 0,
