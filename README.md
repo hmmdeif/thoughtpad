@@ -58,7 +58,7 @@ This will install the test suite framework globally so you can run mocha in the 
 
 The code is available under the [MIT license](http://deif.mit-license.org/).
 
-[travis-image]: https://img.shields.io/travis/hmmdeif/thoughtpad/master.svg?style=flat-square
-[travis-url]: https://travis-ci.org/hmmdeif/thoughtpad
-[coveralls-image]: https://img.shields.io/coveralls/hmmdeif/thoughtpad/master.svg?style=flat-square
-[coveralls-url]: https://coveralls.io/r/hmmdeif/thoughtpad?branch=master
+[travis-image]: https://img.shields.io/travis/thoughtpad/thoughtpad/master.svg?style=flat-square
+[travis-url]: https://travis-ci.org/thoughtpad/thoughtpad
+[coveralls-image]: https://img.shields.io/coveralls/thoughtpad/thoughtpad/master.svg?style=flat-square
+[coveralls-url]: https://coveralls.io/r/thoughtpad/thoughtpad?branch=master
