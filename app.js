@@ -11,7 +11,7 @@ startDevServer = function () {
         watch: ['app/*', 'app.js', 'src/*'],
         ignore: ['pre_out/*'],
         execMap: {
-            js: "node --harmony"
+            js: "iojs"
         },
         verbose: true
     });
@@ -23,7 +23,7 @@ startProdServer = function () {
         ext: 'js',
         watch: ['app/*', 'app.js'],
         execMap: {
-            js: "node --harmony"
+            js: "iojs"
         },
         verbose: true
     });

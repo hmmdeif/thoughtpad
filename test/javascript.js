@@ -37,7 +37,7 @@ describe("javascript compiler", function () {
             result.should.eql('called');
             result2.should.eql('hello');
             done();
-        })();
+        });
     });
 
     it("should call the javascript compile event", function (done) {
@@ -58,7 +58,7 @@ describe("javascript compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql('foo');
             done();
-        })();
+        });
     });
 
     it("should call the javascript post-compile event", function (done) {
@@ -79,7 +79,7 @@ describe("javascript compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql('foo');
             done();
-        })();
+        });
     });
 
     it("should call the javascript pre-output event", function (done) {
@@ -99,7 +99,7 @@ describe("javascript compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql({foo:'foo'});
             done();
-        })();
+        });
     });
 
     it("should write all javascript files to pre_out folder", function (done) {
@@ -115,7 +115,7 @@ describe("javascript compiler", function () {
             result = yield fs.readFile('./test/pre_out/foo.js', 'utf8');
             result.should.eql('foo');
             done();
-        })();
+        });
     });
 
 });

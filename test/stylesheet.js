@@ -39,7 +39,7 @@ describe("stylesheet compiler", function () {
             result.should.eql('called');
             result2.should.eql('hello');
             done();
-        })();
+        });
     });
 
     it("should call the css compile event", function (done) {
@@ -60,7 +60,7 @@ describe("stylesheet compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql('bar');
             done();
-        })();
+        });
     });
 
     it("should call the css post-compile event", function (done) {
@@ -82,7 +82,7 @@ describe("stylesheet compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql('bar');
             done();
-        })();
+        });
     });
 
     it("should call the css pre-output event", function (done) {
@@ -102,7 +102,7 @@ describe("stylesheet compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql({bar:'bar'});
             done();
-        })();
+        });
     });
 
     it("should write all css files to pre_out folder", function (done) {
@@ -118,7 +118,7 @@ describe("stylesheet compiler", function () {
             result = yield fs.readFile('./test/pre_out/bar.css', 'utf8');
             result.should.eql('bar');
             done();
-        })();
+        });
     });
 
 });

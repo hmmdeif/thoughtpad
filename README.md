@@ -38,7 +38,7 @@ Note that you need the minimum node engine (>=0.11.x) that allows generators.
 
 This will install the test suite framework globally so you can run mocha in the command line. Then run the following command:
 
-`mocha --harmony-generators`
+`mocha`
 
 ## Directory Structure
 

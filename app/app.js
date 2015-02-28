@@ -60,12 +60,12 @@ if (cluster.isMaster && !module.parent) {
         applogger.info("\nListening on port " + config[mode].port);
 
         yield compiler.compile(server, serve.cache, mode);
-    })();
+    });
 
 
 } else if (config.mode !== "development") {
     co(function *() {
         server = yield startListenServer();
         server.listen(config[mode].port);
-    })();
+    });
 }

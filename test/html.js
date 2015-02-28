@@ -28,7 +28,7 @@ describe("html compiler", function () {
             thoughtpad.config.layouts.bar.dependsOn.should.eql('foo');
             (thoughtpad.config.layouts.foo.dependsOn === undefined).should.be.true;
             done();
-        })();
+        });
     });
 
     it("should call the precompile event for all pages", function (done) {
@@ -46,7 +46,7 @@ describe("html compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql('ok');
             done();
-        })();
+        });
     });
 
     it("should call the postcompile event for all pages", function (done) {
@@ -64,7 +64,7 @@ describe("html compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql('ok');
             done();
-        })();
+        });
     });
 
     it("should sort dependent pages correctly", function (done) {
@@ -79,7 +79,7 @@ describe("html compiler", function () {
             thoughtpad.config.pages.home.sortedPages[0].name.should.eql('two');
             thoughtpad.config.pages.home.sortedPages[1].name.should.eql('one');
             done();
-        })();
+        });
     });
 
     it("should call the compile event for all pages", function (done) {
@@ -106,7 +106,7 @@ describe("html compiler", function () {
             result = yield fs.exists(folders.preout + "home/two/index.html");
             result.should.be.true;
             done();
-        })();
+        });
     });
 
     it("should call the postcompile event for all pages", function (done) {
@@ -129,7 +129,7 @@ describe("html compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql('ok');
             done();
-        })();
+        });
     });
 
     it("should not compile pages if fullUrl exists on page object", function (done) {
@@ -152,7 +152,7 @@ describe("html compiler", function () {
             yield app.compile(thoughtpad, {});
             result.should.eql('');
             done();
-        })();
+        });
     });
 
     it("should place the index file correctly", function (done) {
@@ -171,7 +171,7 @@ describe("html compiler", function () {
             result = yield fs.exists(folders.preout + "index.html");
             result.should.be.true;
             done();
-        })();
+        });
     });
 
 });
