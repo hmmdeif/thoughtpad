@@ -21,6 +21,7 @@
     "co-fs-plus": "~0.3.1",
     "cli-color": "~0.3.2",
     "nodemon": "~1.3.7",
+    "deep-extend": "~0.3.2",
     "thoughtpad-fileWriter": "git://github.com/thoughtpad/thoughtpad-fileWriter.git#master",
     "thoughtpad-plugin-manager": "git://github.com/thoughtpad/thoughtpad-plugin-manager.git#master",
     "thoughtpad-plugin-compiler-stylus": "git://github.com/thoughtpad/thoughtpad-plugin-compiler-stylus.git#master",

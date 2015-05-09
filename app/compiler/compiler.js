@@ -5,6 +5,7 @@ var js = require('./javascript'),
     html = require('./html'),
     fs = require('co-fs'),
     path = require('path'),
+    extend = require('deep-extend'),
     defaultConfig = require('./defaultConfig'),
     register = require('./pluginRegister');
 
@@ -53,17 +54,19 @@ module.exports = {
         if (!hostnames[0]) {
             hostnames = yield getHostnames();
             len = hostnames.length
-        }        
+        }
 
         logger.compiler('\nStarting site compilation...');
         for (i; i < len; i++) {
-            config = require(__dirname + "/../../src/" + hostnames[i] + "/config.js");
+            config = extend({}, require(__dirname + "/../../src/" + hostnames[i] + "/config.js"));
+            currentHostname = path.normalize(__dirname + "/../../src/" + hostnames[i]).replace(/\\/g, "/");
+
+            config.srcLocation = currentHostname; // Required for modules in case they need the src location
             thoughtpad = register.initModules(config, mode);
 
-            yield thoughtpad.notify('initialise-complete', server);
+            yield thoughtpad.notify('initialise-complete', { server: server, cache: cache, mode: mode, compile: this.compile, hostname: hostnames[i] });
 
-            logger.compiler('\nCompiling ' + hostnames[i] + ":");
-            currentHostname = path.normalize(__dirname + "/../../src/" + hostnames[i]).replace(/\\/g, "/");
+            logger.compiler('\nCompiling ' + hostnames[i] + ":");            
             outDir = path.normalize(__dirname + "/../../out/" + hostnames[i]).replace(/\\/g, "/");
             preoutDir = currentHostname + "/pre_out/";
             staticFileDir = currentHostname + "/files/";
@@ -84,10 +87,11 @@ module.exports = {
 
             yield js.compile(thoughtpad, cache);
             yield css.compile(thoughtpad, cache);
-            yield html.compile(thoughtpad, cache);
+            yield html.compile(thoughtpad, cache);  
 
             logger.compiler('\n  Copying new files to live directory');
             yield copyToLive(outDir, preoutDir, staticFileDir, cache);
+            yield thoughtpad.notify("compile-complete");
             logger.info(" Done!");
         }
     }

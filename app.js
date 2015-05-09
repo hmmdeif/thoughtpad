@@ -8,8 +8,7 @@ startDevServer = function () {
     nodemon({
         script: './app/app.js',
         ext: 'js',
-        watch: ['app/*', 'app.js', 'src/*'],
-        ignore: ['pre_out/*'],
+        watch: ['app/*', 'app.js'],
         execMap: {
             js: "iojs"
         },

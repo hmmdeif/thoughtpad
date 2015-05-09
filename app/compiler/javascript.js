@@ -112,7 +112,7 @@ compile = function *(thoughtpad, cache) {
 
     yield preCompileRequest(thoughtpad, compScripts);
     yield compileRequest(thoughtpad, compScripts);
-    yield postCompileRequest(thoughtpad, compScripts);  
+    yield postCompileRequest(thoughtpad, compScripts);      
     yield preOutputRequest(thoughtpad, compScripts);
 
     // Finally output the files

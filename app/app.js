@@ -67,5 +67,7 @@ if (cluster.isMaster && !module.parent) {
     co(function *() {
         server = yield startListenServer();
         server.listen(config[mode].port);
+    }).catch(function (e) {
+        console.log(e);
     });
 }
