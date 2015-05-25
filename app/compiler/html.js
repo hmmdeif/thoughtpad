@@ -48,8 +48,9 @@ postCompilePage = function *(thoughtpad, pageName) {
 
 compilePage = function *(thoughtpad, pageName, folder) {
     var ext = path.extname(thoughtpad.config.pages[pageName].url).replace('.', ''),
+        friendlyUrl = thoughtpad.config.pages[pageName].friendlyUrl || pageName,
         filepath = thoughtpad.folders.posts + thoughtpad.config.pages[pageName].url,
-        newFileName = thoughtpad.folders.preout + folder + pageName + '/' + "index.html",
+        newFileName = thoughtpad.folders.preout + folder + friendlyUrl + '/' + "index.html",
         contents = thoughtpad.config.pages[pageName].content;
 
     if (!contents) {
@@ -67,7 +68,7 @@ compilePage = function *(thoughtpad, pageName, folder) {
     
     if (thoughtpad.config.pages[pageName].layout) {
         thoughtpad.config.pages[pageName].content = contents;
-        thoughtpad.config.pages[pageName].fullUrl = folder + pageName + '/';
+        thoughtpad.config.pages[pageName].fullUrl = folder + friendlyUrl + '/';
         yield compileLayout(thoughtpad, pageName, thoughtpad.config.pages[pageName].layout);
 
         // Run the postcompile events (usually called to minify the contents)
@@ -137,7 +138,8 @@ sortPages = function (pages, pageName) {
 },
 
 compilePages = function *(thoughtpad, pages, folder) {
-    var i = 0, 
+    var i = 0,
+        newFolder, 
         len;
 
     if (!folder) {
@@ -149,11 +151,18 @@ compilePages = function *(thoughtpad, pages, folder) {
         len = pages.length;
         for (i; i < len; i++) {
             // Compile the very bottom of the stack first so that when we go up we can dynamically add the content in
-            yield compilePages(thoughtpad, thoughtpad.config.pages[pages[i]].pages, folder + pages[i] + "/");
+            if (thoughtpad.config.pages[pages[i]].ignoreBlockInUrl) {
+                newFolder = folder;
+            } else if (thoughtpad.config.pages[pages[i]].friendlyUrl) {
+                newFolder = folder + thoughtpad.config.pages[pages[i]].friendlyUrl + '/';
+            } else {
+                newFolder = folder + pages[i] + '/';
+            }
+            yield compilePages(thoughtpad, thoughtpad.config.pages[pages[i]].pages, newFolder);
 
             // Sort the pages into the order specified by the config
             logger.clearCompiler("  Ordering the html pages");
-            thoughtpad.config.pages[pages[i]].sortedPages = sortPages(thoughtpad.config.pages, pages[i])
+            thoughtpad.config.pages[pages[i]].sortedPages = sortPages(thoughtpad.config.pages, pages[i]);
         
             // Now compile the current level as there will likely be a dependency, but only if we haven't compiled it already
             if (!thoughtpad.config.pages[pages[i]].fullUrl) {

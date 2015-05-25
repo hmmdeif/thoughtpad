@@ -37,7 +37,8 @@
     "thoughtpad-plugin-multilanguage": "git://github.com/thoughtpad/thoughtpad-plugin-multilanguage.git#master",
     "thoughtpad-plugin-redirection": "git://github.com/thoughtpad/thoughtpad-plugin-redirection.git#master",
     "thoughtpad-plugin-zotero": "git://github.com/thoughtpad/thoughtpad-plugin-zotero.git#master",
-    "thoughtpad-plugin-google-analytics": "git://github.com/thoughtpad/thoughtpad-plugin-google-analytics.git#master"
+    "thoughtpad-plugin-google-analytics": "git://github.com/thoughtpad/thoughtpad-plugin-google-analytics.git#master",
+    "thoughtpad-plugin-pagination": "git://github.com/thoughtpad/thoughtpad-plugin-pagination.git#master"
   },
   "devDependencies": {
     "should": "~5.0.1",
