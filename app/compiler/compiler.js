@@ -13,7 +13,7 @@ var getHostnames = function *() {
     return yield fs.readdir(__dirname + "/../../src/");
 },
 
-copyToLive = function *(outDir, preoutDir, staticFileDir, cache) {
+copyToLive = function *(outDir, preoutDir, staticFileDir) {
     yield fileWriter.remakeDirectory(outDir);
     yield fileWriter.copyDirectory(preoutDir, outDir);
     yield fileWriter.copyDirectory(staticFileDir, outDir);
@@ -27,7 +27,7 @@ addDefaultConfigValues = function (thoughtpad) {
                 if (configLayer[key]) {
                     if (typeof configLayer[key] === "object") {
                         addToConfig(layer[key], configLayer[key]);
-                    } 
+                    }
                 } else if (!configLayer[key]) {
                     configLayer[key] = layer[key];
                 }
@@ -39,7 +39,7 @@ addDefaultConfigValues = function (thoughtpad) {
 };
 
 module.exports = {
-    compile: function *(server, cache, mode, hostname) {
+    compile: function *(mode, hostname) {
         var hostnames = [hostname],
             currentHostname = '',
             outDir,
@@ -64,9 +64,9 @@ module.exports = {
             config.srcLocation = currentHostname; // Required for modules in case they need the src location
             thoughtpad = register.initModules(config, mode);
 
-            yield thoughtpad.notify('initialise-complete', { server: server, cache: cache, mode: mode, compile: this.compile, hostname: hostnames[i] });
+            yield thoughtpad.notify('initialise-complete', { mode: mode, compile: this.compile, hostname: hostnames[i] });
 
-            logger.compiler('\nCompiling ' + hostnames[i] + ":");            
+            logger.compiler('\nCompiling ' + hostnames[i] + ":");
             outDir = path.normalize(__dirname + "/../../out/" + hostnames[i]).replace(/\\/g, "/");
             preoutDir = currentHostname + "/pre_out/";
             staticFileDir = currentHostname + "/files/";
@@ -85,12 +85,12 @@ module.exports = {
 
             addDefaultConfigValues(thoughtpad);
 
-            yield js.compile(thoughtpad, cache);
-            yield css.compile(thoughtpad, cache);
-            yield html.compile(thoughtpad, cache);  
+            yield js.compile(thoughtpad);
+            yield css.compile(thoughtpad);
+            yield html.compile(thoughtpad);
 
             logger.compiler('\n  Copying new files to live directory');
-            yield copyToLive(outDir, preoutDir, staticFileDir, cache);
+            yield copyToLive(outDir, preoutDir, staticFileDir);
             yield thoughtpad.notify("compile-complete");
             logger.info(" Done!");
         }

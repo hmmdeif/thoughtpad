@@ -28,7 +28,7 @@ var compileLayout = function *(thoughtpad, pageName, layout, fullContent) {
     // Clean up the subscription as this function will be called for each page
     thoughtpad.unsubscribe('html-compile-complete', 'layout');
 
-    if (thoughtpad.config.layouts[layout].dependsOn) {     
+    if (thoughtpad.config.layouts[layout].dependsOn) {
         thoughtpad.config.pages[pageName].fullContent = contents;
         yield compileLayout(thoughtpad, pageName, thoughtpad.config.layouts[layout].dependsOn, contents);
     } else  {
@@ -40,7 +40,7 @@ postCompilePage = function *(thoughtpad, pageName) {
 
     thoughtpad.subscribe("html-postcompile-complete", function *(res) {
         thoughtpad.config.pages[pageName].fullContent = res.contents;
-    }); 
+    });
 
     yield thoughtpad.notify('html-postcompile-request', { contents: thoughtpad.config.pages[pageName].fullContent });
 
@@ -54,18 +54,18 @@ compilePage = function *(thoughtpad, pageName, folder) {
         contents = thoughtpad.config.pages[pageName].content;
 
     if (!contents) {
-        contents = yield fs.readFile(filepath, 'utf8'); 
+        contents = yield fs.readFile(filepath, 'utf8');
 
         thoughtpad.subscribe('html-compile-complete', 'page', function *(res) {
             contents = res.contents;
         });
 
         yield thoughtpad.notify('html-compile-request', { ext: ext, contents: contents, name: pageName, data: { document: thoughtpad.config.pages[pageName] } });
-    
+
         // Clean up the subscription as this function will be called for each page
         thoughtpad.unsubscribe('html-compile-complete', 'page');
     }
-    
+
     if (thoughtpad.config.pages[pageName].layout) {
         thoughtpad.config.pages[pageName].content = contents;
         thoughtpad.config.pages[pageName].fullUrl = folder + friendlyUrl + '/';
@@ -139,7 +139,7 @@ sortPages = function (pages, pageName) {
 
 compilePages = function *(thoughtpad, pages, folder) {
     var i = 0,
-        newFolder, 
+        newFolder,
         len;
 
     if (!folder) {
@@ -163,7 +163,7 @@ compilePages = function *(thoughtpad, pages, folder) {
             // Sort the pages into the order specified by the config
             logger.clearCompiler("  Ordering the html pages");
             thoughtpad.config.pages[pages[i]].sortedPages = sortPages(thoughtpad.config.pages, pages[i]);
-        
+
             // Now compile the current level as there will likely be a dependency, but only if we haven't compiled it already
             if (!thoughtpad.config.pages[pages[i]].fullUrl) {
                 thoughtpad.config.pages[pages[i]].content = yield compilePage(thoughtpad, pages[i], folder);
@@ -172,7 +172,7 @@ compilePages = function *(thoughtpad, pages, folder) {
     }
 },
 
-compile = function *(thoughtpad, cache) {
+compile = function *(thoughtpad) {
 
     logger.compiler("\n  Reading layout data");
 

@@ -6,31 +6,21 @@ thoughtpad
 
 A static site generator that automatically recompiles multiple sites periodically in a multi-core environment.
 
-*NOT EVEN ALPHA YET; CURRENTLY IN DEVELOPMENT FOR ALPHA*
-
 ## Features
 
 * Multiple domain hosting environment
 * Optional bundling and minification of script and stylesheet files
 * Optional periodic regeneration of sites or specific pages
 * Realtime regeneration for development of sites
-* Non-developer friendly admin section for content management
+* Plugin based generation system
 * Markdown flavoured content editing
-
-## Why
-
-There are a number of user and developer friendly static site applications for node.js already in existence as well as a number of blogging platforms. However in my eyes they always seem to miss something fundamental in their approach. In my eyes content should always be statically generated and only unknown content should be dynamically generated (such as user input).
-
-[Docpad](http://docpad.org/), a terrific static site generation server, has multiple plugins that allow it to be extended. It is a single threaded application however and doesn't make use of the next generation ECMA6 generators. I am also not a fan of how Docpad handles the generation of files and how it watches them for changes. Thoughpad hopes to improve on this.
-
-[Ghost](https://ghost.org/) is about as close as you'll get and probably the more ideal solution than thoughtpad, but healthy competition never hurt anyone. Ghost does bundling, minification, multi-host environments, non-developer friendly content generation and much more. The Ghost platform is the role model for thoughtpad.
 
 ## Running
 
 `npm install`
-`node app`
+`node thoughtpad`
 
-Note that you need the minimum node engine (>=0.11.x) that allows generators.
+Note that you need the minimum node engine (>=0.12.x) that allows generators. Use `node thoughtpad -help` to see available options. By default a browser link will be created for `localhost:8080` using websockets to automatically refresh when changes are detected. No http server is created so you will need to point a webserver to the correct `out` folder location. This makes thoughtpad quite platform agnostic, allowing you to pick whatever static webserver you want.
 
 ## Test
 
@@ -50,7 +40,6 @@ This will install the test suite framework globally so you can run mocha in the 
         * styles - for your css/styl/... files
     * files - static files that will be copied to the directory route on compilation (favicon.ico goes here for instance)
     * layouts - for your layout containers that your content gets injected into
-    * partials - for reusable dynamic content
     * config.js - an object that contains all metadata for the content
 * out - the compiled sites split by their domain name
 
