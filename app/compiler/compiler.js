@@ -49,50 +49,60 @@ module.exports = {
             len = 1,
             config,
             thoughtpad,
-            folders;
+            folders,
+            ret = { success: false };
+            
+        try {
+            if (!hostnames[0]) {
+                hostnames = yield getHostnames();
+                len = hostnames.length
+            }
 
-        if (!hostnames[0]) {
-            hostnames = yield getHostnames();
-            len = hostnames.length
+            logger.compiler('\nStarting site compilation...');
+            for (i; i < len; i++) {
+                config = extend({}, require(__dirname + "/../../src/" + hostnames[i] + "/config.js"));
+                currentHostname = path.normalize(__dirname + "/../../src/" + hostnames[i]).replace(/\\/g, "/");
+
+                config.srcLocation = currentHostname; // Required for modules in case they need the src location
+                thoughtpad = register.initModules(config, mode);
+
+                yield thoughtpad.notify('initialise-complete', { mode: mode, compile: this.compile, hostname: hostnames[i] });
+
+                logger.compiler('\nCompiling ' + hostnames[i] + ":");
+                outDir = path.normalize(__dirname + "/../../out/" + hostnames[i]).replace(/\\/g, "/");
+                preoutDir = currentHostname + "/pre_out/";
+                staticFileDir = currentHostname + "/files/";
+                yield fileWriter.remakeDirectory(currentHostname + "/pre_out/");
+
+                thoughtpad.folders = {
+                    preout: preoutDir,
+                    hostname: currentHostname,
+                    scripts: currentHostname + "/documents/scripts/",
+                    preoutScripts: preoutDir + "scripts/",
+                    stylesheets: currentHostname + "/documents/styles/",
+                    preoutStylesheets: preoutDir + "styles/",
+                    layouts: currentHostname + "/layouts/",
+                    posts: currentHostname + "/documents/posts/"
+                };
+
+                addDefaultConfigValues(thoughtpad);
+
+                yield js.compile(thoughtpad);
+                yield css.compile(thoughtpad);
+                
+                yield html.compile(thoughtpad);
+
+                logger.compiler('\n  Copying new files to live directory');
+                yield copyToLive(outDir, preoutDir, staticFileDir);
+                yield thoughtpad.notify("compile-complete");
+                logger.info(" Done!");
+                ret.success = true;
+            }
+            
+        } catch (e) {
+            logger.error('\n ' + e);
+            console.error(e.stack || e);            
         }
-
-        logger.compiler('\nStarting site compilation...');
-        for (i; i < len; i++) {
-            config = extend({}, require(__dirname + "/../../src/" + hostnames[i] + "/config.js"));
-            currentHostname = path.normalize(__dirname + "/../../src/" + hostnames[i]).replace(/\\/g, "/");
-
-            config.srcLocation = currentHostname; // Required for modules in case they need the src location
-            thoughtpad = register.initModules(config, mode);
-
-            yield thoughtpad.notify('initialise-complete', { mode: mode, compile: this.compile, hostname: hostnames[i] });
-
-            logger.compiler('\nCompiling ' + hostnames[i] + ":");
-            outDir = path.normalize(__dirname + "/../../out/" + hostnames[i]).replace(/\\/g, "/");
-            preoutDir = currentHostname + "/pre_out/";
-            staticFileDir = currentHostname + "/files/";
-            yield fileWriter.remakeDirectory(currentHostname + "/pre_out/");
-
-            thoughtpad.folders = {
-                preout: preoutDir,
-                hostname: currentHostname,
-                scripts: currentHostname + "/documents/scripts/",
-                preoutScripts: preoutDir + "scripts/",
-                stylesheets: currentHostname + "/documents/styles/",
-                preoutStylesheets: preoutDir + "styles/",
-                layouts: currentHostname + "/layouts/",
-                posts: currentHostname + "/documents/posts/"
-            };
-
-            addDefaultConfigValues(thoughtpad);
-
-            yield js.compile(thoughtpad);
-            yield css.compile(thoughtpad);
-            yield html.compile(thoughtpad);
-
-            logger.compiler('\n  Copying new files to live directory');
-            yield copyToLive(outDir, preoutDir, staticFileDir);
-            yield thoughtpad.notify("compile-complete");
-            logger.info(" Done!");
-        }
+        return ret;
     }
 }

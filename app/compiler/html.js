@@ -52,7 +52,7 @@ compilePage = function *(thoughtpad, pageName, folder) {
         filepath = thoughtpad.folders.posts + thoughtpad.config.pages[pageName].url,
         newFileName = thoughtpad.folders.preout + folder + friendlyUrl + '/' + "index.html",
         contents = thoughtpad.config.pages[pageName].content;
-
+        
     if (!contents) {
         contents = yield fs.readFile(filepath, 'utf8');
 
@@ -73,9 +73,12 @@ compilePage = function *(thoughtpad, pageName, folder) {
 
         // Run the postcompile events (usually called to minify the contents)
         yield postCompilePage(thoughtpad, pageName);
-
-        logger.clearCompiler("  Writing page to file system");
-        yield fileWriter.writeFile(newFileName, thoughtpad.config.pages[pageName].fullContent, "pre_out/");
+        
+        if (thoughtpad.config.pages[pageName].publish) {
+            logger.clearCompiler("  Writing page to file system");
+            yield fileWriter.writeFile(newFileName, thoughtpad.config.pages[pageName].fullContent, "pre_out/");
+        }
+    
         // The index is a special case page that sits in the topmost directory
         if (thoughtpad.config.pages[pageName].index) {
             exists = yield fs.exists(thoughtpad.folders.preout + "index.html");
@@ -121,7 +124,7 @@ sortPages = function (pages, pageName) {
     if (page.pages && sortBy) {
         len = page.pages.length;
         for (i; i < len; i++) {
-            if (pages[page.pages[i]][sortBy]) {
+            if (pages[page.pages[i]][sortBy] && pages[page.pages[i]].publish) {
                 sortedArr.push({ name: page.pages[i], value: pages[page.pages[i]][sortBy] });
             }
         }
