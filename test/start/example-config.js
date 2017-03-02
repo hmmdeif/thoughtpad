@@ -29,17 +29,20 @@ module.exports = {
                 'one',
                 'two'
             ],
-            sortBy: 'number'
+            sortBy: 'number',
+			publish: true
         },
         one: {
             number: 1,
-            url: 'one.html'
+            url: 'one.html',
+			publish: true
         },
         two: {
             number: 3,
             url: 'two.html',
             layout: 'bar',
-            index: true
+            index: true,
+			publish: true
         }
     }
 }
